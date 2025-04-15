@@ -1,0 +1,15 @@
+# .gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.env
+.env
+venv/
+Lib/
+Include/
+Scripts/
+pyvenv.cfg
