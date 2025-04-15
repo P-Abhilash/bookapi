@@ -29,7 +29,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     user = db.query(User).filter(User.username == form_data.username).first()
     if user and user.password == form_data.password:
         response = RedirectResponse(url="/", status_code=302)
-        response.set_cookie(key="session_user", value=user.username)
+        response.set_cookie(key="session_user", value=user.username, max_age=86400)
         return response
     raise HTTPException(status_code=401, detail="Incorrect username or password")
 
@@ -37,11 +37,15 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 async def signup(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.username == username).first()
     if existing_user:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Username already exists"})
+        return templates.TemplateResponse("signup.html", {"request": request, "error": "Username already exists"})
     new_user = User(username=username, password=password)
     db.add(new_user)
     db.commit()
-    return templates.TemplateResponse("login.html", {"request": request, "success": "User registered successfully! You can now log in."})
+    return templates.TemplateResponse("signup.html", {"request": request, "success": "User registered successfully! You can now log in."})
+
+@app.get("/signup", response_class=HTMLResponse)
+async def signup_page(request: Request):
+    return templates.TemplateResponse("signup.html", {"request": request})
 
 @app.get("/logout")
 async def logout(response: Response):

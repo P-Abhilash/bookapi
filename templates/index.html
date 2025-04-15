@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Search{% endblock %}
+{% block title %}Home{% endblock %}
 {% block content %}
-<div style="text-align: center; margin-top: 10%;">
-  <form method="get" action="/search">
-    <input type="text" name="q" placeholder="Search books..." style="width: 50%; padding: 1em; font-size: 1.2em;">
-    <br><br>
-    <button type="submit" style="padding: 0.8em 2em; font-size: 1em;">Search</button>
+<div class="text-center">
+  <h1 class="mb-4">Search for books...</h1>
+  <form method="get" action="/search" class="d-flex justify-content-center">
+    <input type="text" name="q" class="form-control w-50 me-2" placeholder="Type book name..." required>
+    <button type="submit" class="btn btn-primary">🔍</button>
   </form>
 </div>
 {% endblock %}
