@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Book App{% endblock %}</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        {% if user %}
+          | <a href="/logout">Logout ({{ user }})</a>
+        {% else %}
+          | <a href="/login">Login</a>
+        {% endif %}
+      </nav>
+      
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

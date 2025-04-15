@@ -1,0 +1,23 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f4f4f9;
+  }
+  nav {
+    margin-bottom: 20px;
+  }
+  nav a {
+    margin-right: 15px;
+    text-decoration: none;
+    color: #0077cc;
+  }
+  main {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  }
+  input, button {
+    margin-top: 10px;
+  }
+  

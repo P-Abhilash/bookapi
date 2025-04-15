@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<div style="text-align: center; margin-top: 10%;">
+  <form method="get" action="/search">
+    <input type="text" name="q" placeholder="Search books..." style="width: 50%; padding: 1em; font-size: 1.2em;">
+    <br><br>
+    <button type="submit" style="padding: 0.8em 2em; font-size: 1em;">Search</button>
+  </form>
+</div>
+{% endblock %}
