@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ shelf.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h2>📁 Shelf: {{ shelf.name }}</h2>
+
+  {% if books %}
+    <div class="row row-cols-1 row-cols-md-2 g-4 mt-3">
+      {% for book in books %}
+        <div class="col">
+          <div class="card h-100 shadow-sm">
+            <div class="row g-0">
+              <div class="col-md-4">
+                {% if book.thumbnail %}
+                  <img src="{{ book.thumbnail }}" class="img-fluid rounded-start" alt="cover">
+                {% else %}
+                  <div class="text-center bg-secondary text-white p-4">No Image</div>
+                {% endif %}
+              </div>
+              <div class="col-md-8">
+                <div class="card-body">
+                  <h5 class="card-title">
+                    <a href="/book/{{ book.book_id }}">{{ book.title }}</a>
+                  </h5>
+                  <p class="card-text text-muted">{{ book.authors }}</p>
+                  <form method="post" action="/remove-from-shelf">
+                    <input type="hidden" name="shelf_id" value="{{ shelf.id }}">
+                    <input type="hidden" name="book_id" value="{{ book.book_id }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">❌ Remove</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted mt-3">This shelf has no books yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

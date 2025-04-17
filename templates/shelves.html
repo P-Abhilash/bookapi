@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}My Shelves{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h2>📚 My Shelves</h2>
+
+  <form class="row g-3 mt-3" method="post" action="/create-shelf">
+    <div class="col-auto">
+      <input type="text" class="form-control" name="name" placeholder="New shelf name" required>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">➕ Create Shelf</button>
+    </div>
+  </form>
+
+  {% if shelves %}
+    <ul class="list-group mt-4">
+      {% for shelf in shelves %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <a href="/shelf/{{ shelf.id }}">{{ shelf.name }}</a>
+          <form method="post" action="/delete-shelf" class="d-inline">
+            <input type="hidden" name="shelf_id" value="{{ shelf.id }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted mt-3">No shelves yet. Add your first one above!</p>
+  {% endif %}
+</div>
+{% endblock %}

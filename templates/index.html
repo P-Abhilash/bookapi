@@ -1,11 +1,114 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}Dashboard{% endblock %}
+
 {% block content %}
-<div class="text-center">
-  <h1 class="mb-4">Search for books...</h1>
-  <form method="get" action="/search" class="d-flex justify-content-center">
-    <input type="text" name="q" class="form-control w-50 me-2" placeholder="Type book name..." required>
-    <button type="submit" class="btn btn-primary">🔍</button>
-  </form>
+<style>
+  .scrollable-card {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+</style>
+<div class="container py-4">
+  <h2 class="mb-4">📚 Welcome, {{ user }}!</h2>
+  <div class="row row-cols-1 row-cols-md-2 g-4">
+
+    <!-- Favorites Card -->
+    <div class="col">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">❤️ Favorites</h5>
+          {% if favorites %}
+          <ul class="list-group list-group-flush">
+            {% for fav in favorites %}
+            <li class="list-group-item d-flex align-items-center">
+              {% if fav.thumbnail %}
+              <img src="{{ fav.thumbnail }}" alt="thumb" class="me-2" width="40">
+              {% endif %}
+              <a href="/book/{{ fav.book_id }}">{{ fav.title }}</a>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted">You haven’t favorited any books yet.</p>
+          {% endif %}
+          <a href="/favorites" class="btn btn-sm btn-outline-primary mt-2">View All</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shelves Card -->
+    <div class="col">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">📁 My Shelves</h5>
+          {% if shelves %}
+          <ul class="list-group list-group-flush">
+            {% for shelf in shelves[:3] %}
+            <li class="list-group-item">
+              <a href="/shelf/{{ shelf.id }}">{{ shelf.name }}</a>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted">You haven’t created any shelves yet.</p>
+          {% endif %}
+          <a href="/shelves" class="btn btn-sm btn-outline-primary mt-2">Manage Shelves</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search History Card -->
+    <div class="col">
+      <div class="card shadow-sm">
+        <div class="card-body scrollable-card">
+          <h5 class="card-title">🔍 Search History</h5>
+          {% if search_history %}
+          <ul class="list-group list-group-flush">
+            {% for term in search_history %}
+            <li class="list-group-item">{{ term }}</li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted">No recent searches yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recently Viewed Books Card -->
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body scrollable-card">
+          <h5 class="card-title d-flex justify-content-between align-items-center">
+            📖 Recently Viewed
+            <a href="/clear-recently-viewed" class="btn btn-sm btn-outline-danger">Clear</a>
+          </h5>
+          
+          <p style="color: red;">Total: {{ viewed_books | length }}</p>
+          {% if viewed_books %}
+          <ul class="list-group list-group-flush">
+            {% for book in viewed_books %}
+            <li class="list-group-item d-flex align-items-center">
+              {% if book.thumbnail %}
+              <img src="{{ book.thumbnail }}" alt="thumb" class="me-2 rounded" width="40" height="60">
+              {% else %}
+              <div class="me-2 bg-secondary text-white d-flex align-items-center justify-content-center"
+                style="width:40px; height:60px; font-size:12px;">No Image</div>
+              {% endif %}
+              <a href="/book/{{ book.id }}" class="text-decoration-none text-dark">{{ book.title }}</a>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted">No recently viewed books.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+
+
+
+  </div>
 </div>
 {% endblock %}
