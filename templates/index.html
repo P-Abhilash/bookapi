@@ -3,69 +3,185 @@
 
 {% block content %}
 <style>
+  body {
+    background: #f4f6f9;
+  }
+
+  .dashboard-header {
+    font-weight: 700;
+    color: #343a40;
+  }
+
+  .card-modern {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .card-modern:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  }
+
+  .card-body {
+    padding: 1.2rem;
+  }
+
+  .card-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+  }
+
   .scrollable-card {
-    max-height: 240px;
+    max-height: 260px;
     overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  .list-group-item {
+    border: none;
+    border-bottom: 1px solid #eee;
+    padding: 0.6rem 0.4rem;
+  }
+
+  .list-group-item:last-child {
+    border-bottom: none;
+  }
+
+  .btn-clear {
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    float: right;
+  }
+
+  .thumb-img {
+    width: 38px;
+    height: auto;
+    object-fit: contain;
+    margin-right: 10px;
+  }
+
+  .card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .text-muted-small {
+    font-size: 0.8rem;
+    color: #999;
+    margin-bottom: 0.5rem;
+  }
+
+  a {
+    color: #1a73e8;
+    /* Soft Google-style blue */
+    text-decoration: none;
+    /* No underline */
+    transition: color 0.2s ease;
+  }
+
+  a:hover {
+    color: #0c47a1;
+    /* Darker on hover */
+    text-decoration: none;
+    /* Still no underline */
+  }
+
+
+  /* 🌐 Smooth, modern scrollbar styling */
+  .scrollable-card::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollable-card::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+
+  .scrollable-card::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+  }
+
+  .scrollable-card::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
   }
 </style>
+
 <div class="container py-4">
-  <h2 class="mb-4">📚 Welcome, {{ user }}!</h2>
+  <h2 class="mb-4 dashboard-header">📚 Welcome, {{ user }}!</h2>
   <div class="row row-cols-1 row-cols-md-2 g-4">
 
-    <!-- Favorites Card -->
+    <!-- ❤️ Favorites -->
     <div class="col">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">❤️ Favorites</h5>
+      <div class="card card-modern">
+        <div class="card-body scrollable-card">
+          <div class="card-header-flex">
+            <h5 class="card-title">❤️ Favorites</h5>
+            <a href="/favorites" class="btn btn-sm btn-outline-primary">View All</a>
+          </div>
           {% if favorites %}
           <ul class="list-group list-group-flush">
             {% for fav in favorites %}
             <li class="list-group-item d-flex align-items-center">
               {% if fav.thumbnail %}
-              <img src="{{ fav.thumbnail }}" alt="thumb" class="me-2" width="40">
+              <img src="{{ fav.thumbnail }}" class="thumb-img" alt="thumb">
               {% endif %}
-              <a href="/book/{{ fav.book_id }}">{{ fav.title }}</a>
+              <a href="/book/{{ fav.book_id }}" class="text-link">{{ fav.title }}</a>
             </li>
             {% endfor %}
           </ul>
           {% else %}
           <p class="text-muted">You haven’t favorited any books yet.</p>
           {% endif %}
-          <a href="/favorites" class="btn btn-sm btn-outline-primary mt-2">View All</a>
         </div>
       </div>
     </div>
 
-    <!-- Shelves Card -->
+    <!-- 📁 My Shelves -->
     <div class="col">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">📁 My Shelves</h5>
+      <div class="card card-modern">
+        <div class="card-body scrollable-card">
+          <div class="card-header-flex">
+            <h5 class="card-title">📁 My Shelves</h5>
+            <a href="/shelves" class="btn btn-sm btn-outline-primary">Manage</a>
+          </div>
           {% if shelves %}
           <ul class="list-group list-group-flush">
-            {% for shelf in shelves[:3] %}
+            {% for shelf in shelves %}
             <li class="list-group-item">
-              <a href="/shelf/{{ shelf.id }}">{{ shelf.name }}</a>
+              <a href="/shelf/{{ shelf.id }}" class="text-link">{{ shelf.name }}</a>
             </li>
             {% endfor %}
           </ul>
           {% else %}
           <p class="text-muted">You haven’t created any shelves yet.</p>
           {% endif %}
-          <a href="/shelves" class="btn btn-sm btn-outline-primary mt-2">Manage Shelves</a>
         </div>
       </div>
     </div>
 
-    <!-- Search History Card -->
+    <!-- 🔍 Search History -->
     <div class="col">
-      <div class="card shadow-sm">
+      <div class="card card-modern shadow-sm h-100">
         <div class="card-body scrollable-card">
-          <h5 class="card-title">🔍 Search History</h5>
-          {% if search_history %}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="card-title mb-0">🔍 Search History</h5>
+            <a href="/clear-search-history" class="btn btn-sm btn-outline-danger">Clear</a>
+          </div>
+          <hr class="my-2">
+          {% if search_history_zipped %}
           <ul class="list-group list-group-flush">
-            {% for term in search_history %}
-            <li class="list-group-item">{{ term }}</li>
+            {% for raw, label in search_history_zipped %}
+            <li class="list-group-item px-2 py-2">
+              <a href="/search?q={{ raw | urlencode }}" class="text-decoration-none history-link d-block">
+                🔎 {{ label }}
+              </a>
+            </li>
             {% endfor %}
           </ul>
           {% else %}
@@ -75,27 +191,25 @@
       </div>
     </div>
 
-    <!-- Recently Viewed Books Card -->
+    <!-- 📖 Recently Viewed -->
     <div class="col">
-      <div class="card shadow-sm h-100">
+      <div class="card card-modern">
         <div class="card-body scrollable-card">
-          <h5 class="card-title d-flex justify-content-between align-items-center">
-            📖 Recently Viewed
+          <div class="card-header-flex">
+            <h5 class="card-title">📖 Recently Viewed</h5>
             <a href="/clear-recently-viewed" class="btn btn-sm btn-outline-danger">Clear</a>
-          </h5>
-          
-          <p style="color: red;">Total: {{ viewed_books | length }}</p>
+          </div>
           {% if viewed_books %}
           <ul class="list-group list-group-flush">
             {% for book in viewed_books %}
             <li class="list-group-item d-flex align-items-center">
               {% if book.thumbnail %}
-              <img src="{{ book.thumbnail }}" alt="thumb" class="me-2 rounded" width="40" height="60">
+              <img src="{{ book.thumbnail }}" alt="thumb" class="thumb-img">
               {% else %}
               <div class="me-2 bg-secondary text-white d-flex align-items-center justify-content-center"
                 style="width:40px; height:60px; font-size:12px;">No Image</div>
               {% endif %}
-              <a href="/book/{{ book.id }}" class="text-decoration-none text-dark">{{ book.title }}</a>
+              <a href="/book/{{ book.id }}" class="text-link">{{ book.title }}</a>
             </li>
             {% endfor %}
           </ul>
@@ -105,9 +219,6 @@
         </div>
       </div>
     </div>
-
-
-
 
   </div>
 </div>

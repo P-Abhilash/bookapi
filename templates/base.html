@@ -21,14 +21,24 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="/">📚 BookApp</a>
 
-            <form class="d-flex search-form me-3" action="/search" method="get">
-                <input class="form-control me-2" type="search" placeholder="Search books..." name="q" required>
-                <button class="btn btn-outline-primary" type="submit">Search</button>
-            </form>
+            <form method="get" action="/search" class="d-flex flex-wrap gap-2 align-items-center">
+                <select name="filter" class="form-select w-auto">
+                  <option value="">All</option>
+                  <option value="intitle" {% if filter == "intitle" %}selected{% endif %}>Title</option>
+                  <option value="inauthor" {% if filter == "inauthor" %}selected{% endif %}>Author</option>
+                  <option value="subject" {% if filter == "subject" %}selected{% endif %}>Category</option>
+                  <option value="inpublisher" {% if filter == "inpublisher" %}selected{% endif %}>Publisher</option>
+                  <option value="isbn" {% if filter == "isbn" %}selected{% endif %}>ISBN</option>
+                </select>
+              
+                <input type="text" name="q" placeholder="Search books..." class="form-control w-auto" required>
+                <button class="btn btn-primary">Search</button>
+              </form>
+              
+            
 
             <div class="d-flex align-items-center">
                 {% if user %}
-                    <a href="/favorites" class="btn btn-link">Favorites</a>
                     <a href="/logout" class="btn btn-outline-secondary ms-2">Logout ({{ user }})</a>
                 {% else %}
                     <a href="/login" class="btn btn-outline-primary">Login</a>

@@ -13,9 +13,6 @@ import os
 from models import User, SessionLocal, Base, engine
 from starlette.middleware.sessions import SessionMiddleware
 
-
-
-
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
@@ -75,47 +72,119 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     favorites = db.query(Favorite).filter_by(username=user).limit(5).all()
     shelves = db.query(Shelf).filter_by(username=user).all()
 
-    search_history = request.session.get("search_history", [])
-    seen = set()
-    search_history = [x for x in search_history if not (x in seen or seen.add(x))][-10:][::-1]
+    # === Search History Processing ===
+    search_history_raw = request.session.get("search_history", [])
+    search_history_display = []
+    for item in search_history_raw:
+        if item.startswith("inauthor:"):
+            label = "Author: " + item.replace("inauthor:", "")
+        elif item.startswith("intitle:"):
+            label = "Title: " + item.replace("intitle:", "")
+        elif item.startswith("subject:"):
+            label = "Category: " + item.replace("subject:", "")
+        else:
+            label = item
+        search_history_display.append(label)
+    search_history_zipped = list(zip(search_history_raw, search_history_display))
 
+    # === Viewed Books Logic ===
     viewed_books = request.session.get("viewed_books", [])
-    print("RENDERING DASHBOARD WITH:", [b["title"] for b in viewed_books])
+    seen_ids = set()
+    filtered_books = []
+    for book in reversed(viewed_books):
+        if book['id'] not in seen_ids:
+            seen_ids.add(book['id'])
+            filtered_books.append(book)
+    filtered_books = filtered_books[:5]
 
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user,
         "favorites": favorites,
         "shelves": shelves,
-        "search_history": search_history,
-        "viewed_books": viewed_books
+        "search_history_zipped": search_history_zipped,
+        "viewed_books": filtered_books
     })
 
 
+def format_search_label(raw_query: str) -> str:
+    mapping = {
+        "inauthor": "Author",
+        "intitle": "Title",
+        "subject": "Category",
+        "inpublisher": "Publisher",
+        "isbn": "ISBN"
+    }
+
+    if ":" in raw_query:
+        prefix, value = raw_query.split(":", 1)
+        label = mapping.get(prefix, prefix.capitalize())
+        return f"{label}: {value.strip()}"
+    return raw_query
+
 
 @app.get("/search", response_class=HTMLResponse)
-async def search_books(request: Request, q: Optional[str] = None):
+async def search_books(
+    request: Request,
+    q: Optional[str] = None,
+    filter: Optional[str] = "",
+    db: Session = Depends(get_db)
+):
     user = request.cookies.get("session_user")
     if not user:
         return RedirectResponse(url="/login")
+
     books = []
-    search_history = request.session.get("search_history", [])
-    if q and q not in search_history:
-        search_history.append(q)
-        if len(search_history) > 10:
-            search_history = search_history[-10:] 
-        request.session["search_history"] = search_history
 
+    # Get or initialize session history
+    search_history_raw = request.session.get("search_history", [])
 
-    if q:
+    # Construct query
+    query = f"{filter}:{q}" if filter else q
+
+    # Add to history ONLY if query is valid and not a duplicate
+    if query and query not in search_history_raw:
+        search_history_raw.append(query)
+        request.session["search_history"] = search_history_raw[-10:]  # keep last 10
+
+    # Build display-friendly version
+    search_history_display = []
+    for item in search_history_raw:
+        if item.startswith("inauthor:"):
+            label = "Author: " + item.replace("inauthor:", "")
+        elif item.startswith("intitle:"):
+            label = "Title: " + item.replace("intitle:", "")
+        elif item.startswith("subject:"):
+            label = "Category: " + item.replace("subject:", "")
+        else:
+            label = item
+        search_history_display.append(label)
+
+    # Combine both for display
+    search_history_zipped = list(zip(search_history_raw, search_history_display))
+
+    # Fetch books
+    if query:
         try:
-            url = f"https://www.googleapis.com/books/v1/volumes?q={q}"
+            url = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(query)}"
             with urllib.request.urlopen(url) as response:
                 data = json.loads(response.read())
                 books = data.get("items", [])
         except Exception as e:
-            print("Error fetching from Google Books API:", e)
-    return templates.TemplateResponse("search.html", {"request": request, "books": books, "query": q, "user": user})
+            print("Google Books API error:", e)
+            url = "Failed"
+    else:
+        url = "None"
+
+    return templates.TemplateResponse("search.html", {
+        "request": request,
+        "books": books,
+        "query": q,
+        "filter": filter,
+        "user": user,
+        "search_history_zipped": search_history_zipped,
+    })
+
 
 @app.get("/book/{book_id}", response_class=HTMLResponse)
 async def book_detail(book_id: str, request: Request, db: Session = Depends(get_db)):
@@ -149,8 +218,6 @@ async def book_detail(book_id: str, request: Request, db: Session = Depends(get_
     # Limit to 10
     request.session["viewed_books"] = viewed_books[:10]
 
-    print("SESSION AFTER:", [b["title"] for b in request.session["viewed_books"]])
-
     # Fetch shelves & shelfBooks for current user
     shelves = []
     shelf_books = []
@@ -166,8 +233,6 @@ async def book_detail(book_id: str, request: Request, db: Session = Depends(get_
     "shelf_books": [sb.shelf_id for sb in shelf_books],
     "is_favorite": is_favorite
 })
-
-
 
 
 @app.get("/favorites", response_class=HTMLResponse)
@@ -338,4 +403,10 @@ async def view_shelf(shelf_id: int, request: Request, db: Session = Depends(get_
 @app.get("/clear-recently-viewed")
 async def clear_recently_viewed(request: Request):
     request.session["viewed_books"] = []
+    return RedirectResponse(url="/", status_code=303)
+
+
+@app.get("/clear-search-history")
+async def clear_search_history(request: Request):
+    request.session["search_history"] = []
     return RedirectResponse(url="/", status_code=303)
