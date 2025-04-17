@@ -73,7 +73,7 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     shelves = db.query(Shelf).filter_by(username=user).all()
 
     # === Search History Processing ===
-    search_history_raw = request.session.get("search_history", [])
+    search_history_raw = request.session.get(f"search_history_{user}", [])
     search_history_display = []
     for item in search_history_raw:
         if item.startswith("inauthor:"):
@@ -88,7 +88,7 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     search_history_zipped = list(zip(search_history_raw, search_history_display))
 
     # === Viewed Books Logic ===
-    viewed_books = request.session.get("viewed_books", [])
+    viewed_books = request.session.get(f"viewed_books_{user}", [])
     seen_ids = set()
     filtered_books = []
     for book in reversed(viewed_books):
@@ -137,7 +137,7 @@ async def search_books(
     books = []
 
     # Get or initialize session history
-    search_history_raw = request.session.get("search_history", [])
+    search_history_raw = request.session.get(f"search_history_{user}", [])
 
     # Construct query
     query = f"{filter}:{q}" if filter else q
@@ -145,7 +145,7 @@ async def search_books(
     # Add to history ONLY if query is valid and not a duplicate
     if query and query not in search_history_raw:
         search_history_raw.append(query)
-        request.session["search_history"] = search_history_raw[-10:]  # keep last 10
+        request.session[f"search_history_{user}"] = search_history_raw[-10:]  # keep last 10
 
     # Build display-friendly version
     search_history_display = []
@@ -205,7 +205,7 @@ async def book_detail(book_id: str, request: Request, db: Session = Depends(get_
 
 
     # --- HANDLE VIEWED BOOKS ---
-    viewed_books = request.session.get("viewed_books", [])
+    viewed_books = request.session.get(f"viewed_books_{user}", [])
     viewed_books = [b for b in viewed_books if b["id"] != book_id]
 
     # Add to front
@@ -216,7 +216,7 @@ async def book_detail(book_id: str, request: Request, db: Session = Depends(get_
     })
 
     # Limit to 10
-    request.session["viewed_books"] = viewed_books[:10]
+    request.session[f"viewed_books_{user}"] = viewed_books[:10]
 
     # Fetch shelves & shelfBooks for current user
     shelves = []
@@ -402,11 +402,15 @@ async def view_shelf(shelf_id: int, request: Request, db: Session = Depends(get_
 
 @app.get("/clear-recently-viewed")
 async def clear_recently_viewed(request: Request):
-    request.session["viewed_books"] = []
+    user = request.cookies.get("session_user")
+    request.session[f"viewed_books_{user}"] = []
+
     return RedirectResponse(url="/", status_code=303)
 
 
 @app.get("/clear-search-history")
 async def clear_search_history(request: Request):
-    request.session["search_history"] = []
+    user = request.cookies.get("session_user")
+    request.session[f"search_history_{user}"] = []
+
     return RedirectResponse(url="/", status_code=303)

@@ -21,6 +21,7 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="/">📚 BookApp</a>
 
+            {% if user %}
             <form method="get" action="/search" class="d-flex flex-wrap gap-2 align-items-center">
                 <select name="filter" class="form-select w-auto">
                   <option value="">All</option>
@@ -30,12 +31,10 @@
                   <option value="inpublisher" {% if filter == "inpublisher" %}selected{% endif %}>Publisher</option>
                   <option value="isbn" {% if filter == "isbn" %}selected{% endif %}>ISBN</option>
                 </select>
-              
                 <input type="text" name="q" placeholder="Search books..." class="form-control w-auto" required>
                 <button class="btn btn-primary">Search</button>
-              </form>
-              
-            
+            </form>
+            {% endif %}
 
             <div class="d-flex align-items-center">
                 {% if user %}
