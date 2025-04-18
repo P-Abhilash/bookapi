@@ -105,18 +105,21 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
             with urllib.request.urlopen(url) as response:
                 book_data = json.loads(response.read())
                 volume_info = book_data.get('volumeInfo',{})
-                print(volume_info.get('categories',[]))
                 for category in volume_info.get('categories',[]):
                     check = True
                     for index, genre in enumerate(genres):
-                        print(index)
                         if genre["name"]==category:
                             genres[index]["count"]=genres[index]["count"]+1
                             check = False
                             break
                     if check:
+                        if "/ General" in category:
+                            name = category.replace("/ General", "").strip()
+                        else:
+                            name = category
                         genres.append({
-                            "name": category,
+                            "name": name,
+                            "link": category,
                             "count":1
                         })
         except:
