@@ -97,13 +97,41 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
             filtered_books.append(book)
     filtered_books = filtered_books[:5]
 
+    #===Genres===
+    genres = []
+    for favorite in db.query(Favorite).filter_by(username=user).all():
+        url = f"https://www.googleapis.com/books/v1/volumes/{favorite.book_id}"
+        try:
+            with urllib.request.urlopen(url) as response:
+                book_data = json.loads(response.read())
+                volume_info = book_data.get('volumeInfo',{})
+                print(volume_info.get('categories',[]))
+                for category in volume_info.get('categories',[]):
+                    check = True
+                    for index, genre in enumerate(genres):
+                        print(index)
+                        if genre["name"]==category:
+                            genres[index]["count"]=genres[index]["count"]+1
+                            check = False
+                            break
+                    if check:
+                        genres.append({
+                            "name": category,
+                            "count":1
+                        })
+        except:
+            print(f"Book {favorite.book_id} not found")
+    genres = sorted(genres, key=lambda x: x["count"], reverse=True)
+    print(genres)
+
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user,
         "favorites": favorites,
         "shelves": shelves,
         "search_history_zipped": search_history_zipped,
-        "viewed_books": filtered_books
+        "viewed_books": filtered_books,
+        "genres": genres
     })
 
 

@@ -219,7 +219,37 @@
         </div>
       </div>
     </div>
-
+    <!-- 🧩 Browse by Genre -->
+<div class="col-12">
+  <div class="card card-modern">
+    <div class="card-body">
+      <div class="card-header-flex">
+        <h5 class="card-title">🧩 Browse by Genre</h5>
+      </div>
+      {% if genres %}
+      <div class="row row-cols-2 row-cols-md-4 g-3 mt-2">
+        {% for genre in genres %}
+        <div class="col">
+          <a href="/search?filter=subject&q={{ genre.name | urlencode }}" class="text-decoration-none">
+            <div class="card h-100 text-center p-3 shadow-sm border-0 genre-card hover-shadow" style="border-radius: 12px;">
+              <div class="mb-2">
+                {% if genre.icon %}
+                <img src="{{ genre.icon }}" alt="{{ genre.name }}" class="img-fluid" style="max-height: 40px;">
+                {% endif %}
+              </div>
+              <div class="fw-semibold">{{ genre.name }}</div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted">No genres available right now.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
   </div>
 </div>
 {% endblock %}
+
