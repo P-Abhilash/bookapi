@@ -4,7 +4,7 @@
 {% block content %}
 <style>
   body {
-    background: #f4f6f9;
+    background: #7F694C ;
   }
 
   .dashboard-header {
@@ -13,7 +13,7 @@
   }
 
   .card-modern {
-    background: #fff;
+    background: #d2b48c;
     border-radius: 18px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
     transition: all 0.2s ease-in-out;
@@ -32,6 +32,7 @@
     font-weight: 600;
     font-size: 1.1rem;
     margin-bottom: 0.8rem;
+    color: #4c2c02;
   }
 
   .scrollable-card {
@@ -116,12 +117,11 @@
   <h2 class="mb-4 dashboard-header">📚 Welcome, {{ user }}!</h2>
   <div class="row row-cols-1 row-cols-md-2 g-4">
 
-    <!-- ❤️ Favorites -->
     <div class="col">
       <div class="card card-modern">
         <div class="card-body scrollable-card">
           <div class="card-header-flex">
-            <h5 class="card-title">❤️ Favorites</h5>
+            <h5 class="card-title">Favorites</h5>
             <a href="/favorites" class="btn btn-sm btn-outline-primary">View All</a>
           </div>
           {% if favorites %}
