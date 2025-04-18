@@ -72,7 +72,7 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     favorites = db.query(Favorite).filter_by(username=user).limit(5).all()
     shelves = db.query(Shelf).filter_by(username=user).all()
 
-    # === Search History Processing ===
+    # === Search History ===
     search_history_raw = request.session.get(f"search_history_{user}", [])
     search_history_display = []
     for item in search_history_raw:
@@ -87,7 +87,7 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
         search_history_display.append(label)
     search_history_zipped = list(zip(search_history_raw, search_history_display))
 
-    # === Viewed Books Logic ===
+    # === Recently Viewed ===
     viewed_books = request.session.get(f"viewed_books_{user}", [])
     seen_ids = set()
     filtered_books = []
@@ -97,35 +97,35 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
             filtered_books.append(book)
     filtered_books = filtered_books[:5]
 
-    #===Genres===
-    genres = []
-    for favorite in db.query(Favorite).filter_by(username=user).all():
-        url = f"https://www.googleapis.com/books/v1/volumes/{favorite.book_id}"
+    # === Genres (if using genres) ===
+    genres = []  # Keeping empty or use your existing genre logic here
+
+    # === Featured Books Carousel ===
+    carousel_books = []
+
+    # 1st Attempt: search 'python programming'
+    try:
+        url = "https://www.googleapis.com/books/v1/volumes?q=python+programming&maxResults=10"
+        with urllib.request.urlopen(url) as response:
+            data = json.loads(response.read())
+            carousel_books = data.get("items", [])
+            print("✅ Featured books loaded:", len(carousel_books))
+    except Exception as e:
+        print("❌ Primary fetch failed:", e)
+
+    # Fallback Attempt
+    if not carousel_books:
         try:
+            url = "https://www.googleapis.com/books/v1/volumes?q=harry+potter&maxResults=10"
             with urllib.request.urlopen(url) as response:
-                book_data = json.loads(response.read())
-                volume_info = book_data.get('volumeInfo',{})
-                for category in volume_info.get('categories',[]):
-                    check = True
-                    for index, genre in enumerate(genres):
-                        if genre["name"]==category:
-                            genres[index]["count"]=genres[index]["count"]+1
-                            check = False
-                            break
-                    if check:
-                        if "/ General" in category:
-                            name = category.replace("/ General", "").strip()
-                        else:
-                            name = category
-                        genres.append({
-                            "name": name,
-                            "link": category,
-                            "count":1
-                        })
-        except:
-            print(f"Book {favorite.book_id} not found")
-    genres = sorted(genres, key=lambda x: x["count"], reverse=True)
-    print(genres)
+                data = json.loads(response.read())
+                carousel_books = data.get("items", [])
+                print("🟡 Fallback books loaded:", len(carousel_books))
+        except Exception as e:
+            print("❌ Fallback fetch failed:", e)
+
+    if not carousel_books:
+        print("⚠️ No books available for carousel.")
 
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -134,9 +134,9 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
         "shelves": shelves,
         "search_history_zipped": search_history_zipped,
         "viewed_books": filtered_books,
-        "genres": genres
+        "genres": genres,
+        "carousel_books": carousel_books
     })
-
 
 def format_search_label(raw_query: str) -> str:
     mapping = {
@@ -445,3 +445,5 @@ async def clear_search_history(request: Request):
     request.session[f"search_history_{user}"] = []
 
     return RedirectResponse(url="/", status_code=303)
+
+

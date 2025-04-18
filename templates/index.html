@@ -79,21 +79,15 @@
 
   a {
     color: #1a73e8;
-    /* Soft Google-style blue */
     text-decoration: none;
-    /* No underline */
     transition: color 0.2s ease;
   }
 
   a:hover {
     color: #0c47a1;
-    /* Darker on hover */
     text-decoration: none;
-    /* Still no underline */
   }
 
-
-  /* 🌐 Smooth, modern scrollbar styling */
   .scrollable-card::-webkit-scrollbar {
     width: 8px;
   }
@@ -111,10 +105,64 @@
   .scrollable-card::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
   }
+
+  .carousel-item img {
+    object-fit: contain;
+    width: auto;
+    max-height: 250px;
+  }
 </style>
 
 <div class="container py-4">
-  <h2 class="mb-4 dashboard-header">📚 Welcome, {{ user }}!</h2>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="dashboard-header">📚 Welcome, {{ user }}!</h2>
+    
+    <form method="get" action="/" class="d-flex align-items-center">
+      <label for="filter" class="me-2 fw-semibold text-muted small">Sort by:</label>
+      <select name="filter" id="filter" class="form-select form-select-sm w-auto me-2" onchange="this.form.submit()">
+        <option value="week" {% if filter == "week" %}selected{% endif %}>Popular this week</option>
+        <option value="month" {% if filter == "month" %}selected{% endif %}>Popular this month</option>
+        <option value="top" {% if filter == "top" %}selected{% endif %}>Top rated</option>
+        <option value="new" {% if filter == "new" %}selected{% endif %}>New arrivals</option>
+      </select>
+    </form>
+  </div>
+
+  {% if carousel_books %}
+  <div id="bookCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+    <div class="carousel-inner">
+      {% for book in carousel_books %}
+        {% set info = book.volumeInfo %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+          <a href="/book/{{ book.id }}" class="text-decoration-none text-dark">
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4 p-4 text-center">
+              {% if info.imageLinks and info.imageLinks.thumbnail %}
+                <img src="{{ info.imageLinks.thumbnail }}" alt="{{ info.title }}" class="rounded shadow" style="max-height: 250px;">
+              {% else %}
+                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="width:150px; height:200px;">No Image</div>
+              {% endif %}
+              <div class="mt-3 mt-md-0">
+                <h5 class="fw-bold mb-1">{{ info.title or 'Untitled' }}</h5>
+                {% if info.authors %}
+                  <p class="text-muted mb-1">by {{ info.authors | join(', ') }}</p>
+                {% endif %}
+                <small class="text-primary">Click to view details</small>
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#bookCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#bookCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon"></span>
+    </button>
+  </div>
+  {% endif %}
+
   <div class="row row-cols-1 row-cols-md-2 g-4">
 
     <div class="col">
@@ -219,37 +267,100 @@
         </div>
       </div>
     </div>
-    <!-- 🧩 Browse by Genre -->
-<div class="col-12">
-  <div class="card card-modern">
-    <div class="card-body">
-      <div class="card-header-flex">
-        <h5 class="card-title">🧩 Browse by Genre</h5>
-      </div>
-      {% if genres %}
-      <div class="row row-cols-2 row-cols-md-4 g-3 mt-2">
-        {% for genre in genres %}
-        <div class="col">
-          <a href="/search?filter=subject&q='{{ genre.link | urlencode }}'" class="text-decoration-none">
-            <div class="card h-100 text-center p-3 shadow-sm border-0 genre-card hover-shadow" style="border-radius: 12px;">
-              <div class="mb-2">
-                {% if genre.icon %}
-                <img src="{{ genre.icon }}" alt="{{ genre.name }}" class="img-fluid" style="max-height: 40px;">
+    <!-- 📚 Featured Section -->
+<div class="mb-5">
+  <h4 class="mb-3">📚 Recommended Books</h4>
+
+  {% if carousel_books %}
+  <!-- Carousel -->
+  <div id="bookCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+    <div class="carousel-inner">
+      {% for book in carousel_books %}
+        {% set info = book.volumeInfo %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+          <a href="/book/{{ book.id }}" class="text-decoration-none text-dark">
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4 p-4 text-center">
+              {% if info.imageLinks and info.imageLinks.thumbnail %}
+                <img src="{{ info.imageLinks.thumbnail }}" alt="{{ info.title }}" class="rounded shadow" style="max-height: 250px;">
+              {% else %}
+                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="width:150px; height:200px;">No Image</div>
+              {% endif %}
+              <div class="mt-3 mt-md-0">
+                <h5 class="fw-bold mb-1">{{ info.title or 'Untitled' }}</h5>
+                {% if info.authors %}
+                  <p class="text-muted mb-1">by {{ info.authors | join(', ') }}</p>
                 {% endif %}
+                <small class="text-primary">Click to view details</small>
               </div>
-              <div class="fw-semibold">{{ genre.name }}</div>
             </div>
           </a>
         </div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <p class="text-muted">No genres available right now.</p>
-      {% endif %}
+      {% endfor %}
     </div>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#bookCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#bookCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon"></span>
+    </button>
   </div>
+
+  <!-- Grid of Featured Books -->
+  <h5 class="mb-3">📘 Featured Books</h5>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+    {% for book in carousel_books %}
+      {% set info = book.volumeInfo %}
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          {% if info.imageLinks and info.imageLinks.thumbnail %}
+            <img src="{{ info.imageLinks.thumbnail }}" class="card-img-top" alt="{{ info.title }}">
+          {% else %}
+            <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">No Image</div>
+          {% endif %}
+          <div class="card-body">
+            <h6 class="card-title mb-1">
+              <a href="/book/{{ book.id }}" class="text-decoration-none">{{ info.title or 'Untitled' }}</a>
+            </h6>
+            {% if info.authors %}
+              <p class="card-text text-muted small">by {{ info.authors | join(', ') }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="text-muted">No featured books available at the moment.</p>
+  {% endif %}
 </div>
+
+    <!-- 🧩 Browse by Genre -->
+    <div class="col-12">
+      <div class="card card-modern">
+        <div class="card-body">
+          <div class="card-header-flex">
+            <h5 class="card-title">🧩 Browse by Genre</h5>
+          </div>
+          {% if genres %}
+          <div class="row row-cols-2 row-cols-md-4 g-3 mt-2">
+            {% for genre in genres %}
+            <div class="col">
+              <a href="/search?filter=subject&q={{ genre.link | urlencode }}" class="text-decoration-none">
+                <div class="card h-100 text-center p-3 shadow-sm border-0 genre-card hover-shadow" style="border-radius: 12px;">
+                  <div class="mb-2 fw-semibold">{{ genre.name }}</div>
+                </div>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-muted">No genres available right now.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 {% endblock %}
-

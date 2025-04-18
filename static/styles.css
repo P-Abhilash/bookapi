@@ -20,4 +20,7 @@ body {
   input, button {
     margin-top: 10px;
   }
-  
+  .carousel-item img {
+    object-fit: contain;
+    max-height: 250px;
+  }
