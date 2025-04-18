@@ -1,5 +1,50 @@
 {% extends "base.html" %}
 {% block title %}Login{% endblock %}
+{% block head %}
+<style>
+  .card {
+    border-radius: 12px;
+    border: none;
+    background-color:bisque;
+  }
+
+  .card h4 {
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  input.form-control {
+    border-radius: 8px;
+    border: 1px solid #850101;
+    transition: border-color 0.2s;
+  }
+
+  input.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
+  }
+
+  .btn-primary {
+    border-radius: 8px;
+    font-weight: 500;
+  }
+
+  .alert-danger {
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .text-center a {
+    color: #0d6efd;
+    text-decoration: none;
+  }
+
+  .text-center a:hover {
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
 {% block content %}
 <div class="card mx-auto p-4 shadow" style="max-width: 400px;">
   <h4 class="text-center">Login</h4>
