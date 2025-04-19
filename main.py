@@ -99,6 +99,17 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
 
 #===Genres===
     genres = []
+    default = [
+        {"name": "Romance", "link": "Romance", "count": 0},
+        {"name": "Mystery", "link": "Mystery", "count": 0},
+        {"name": "Fantasy", "link": "Fantasy", "count": 0},
+        {"name": "Action", "link": "Action", "count": 0},
+        {"name": "Science Fiction", "link": "Science Fiction", "count": 0},
+        {"name": "Horror", "link": "Horror", "count": 0},
+        {"name": "Adventure", "link": "Adventure", "count": 0},
+        {"name": "Western", "link": "Western", "count": 0},
+    ]
+
     for favorite in db.query(Favorite).filter_by(username=user).all():
         url = f"https://www.googleapis.com/books/v1/volumes/{favorite.book_id}"
         try:
@@ -106,6 +117,7 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
                 book_data = json.loads(response.read())
                 volume_info = book_data.get('volumeInfo',{})
                 for category in volume_info.get('categories',[]):
+                    print(category)
                     check = True
                     for index, genre in enumerate(genres):
                         if genre["name"]==category:
@@ -126,7 +138,8 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
             print(f"Book {favorite.book_id} not found")
     genres = sorted(genres, key=lambda x: x["count"], reverse=True)
     print(genres)
-
+    if not genres:
+        genres = default
     # === Featured Books Carousel ===
     carousel_books = []
 
