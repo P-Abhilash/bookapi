@@ -97,7 +97,7 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
             filtered_books.append(book)
     filtered_books = filtered_books[:5]
 
-#===Genres===
+    # === Genres ===
     genres = []
     default = [
         {"name": "Romance", "link": "Romance", "count": 0},
@@ -115,57 +115,66 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
         try:
             with urllib.request.urlopen(url) as response:
                 book_data = json.loads(response.read())
-                volume_info = book_data.get('volumeInfo',{})
-                for category in volume_info.get('categories',[]):
-                    print(category)
+                volume_info = book_data.get('volumeInfo', {})
+                for category in volume_info.get('categories', []):
                     check = True
                     for index, genre in enumerate(genres):
-                        if genre["name"]==category:
-                            genres[index]["count"]=genres[index]["count"]+1
+                        if genre["name"] == category:
+                            genres[index]["count"] += 1
                             check = False
                             break
                     if check:
-                        if "/ General" in category:
-                            name = category.replace("/ General", "").strip()
-                        else:
-                            name = category
-                        genres.append({
-                            "name": name,
-                            "link": category,
-                            "count":1
-                        })
+                        name = category.replace("/ General", "").strip() if "/ General" in category else category
+                        genres.append({"name": name, "link": category, "count": 1})
         except:
             print(f"Book {favorite.book_id} not found")
+
     genres = sorted(genres, key=lambda x: x["count"], reverse=True)
-    print(genres)
     if not genres:
         genres = default
-    # === Featured Books Carousel ===
-    carousel_books = []
 
-    # 1st Attempt: search 'python programming'
-    try:
-        url = "https://www.googleapis.com/books/v1/volumes?q=python+programming&maxResults=10"
-        with urllib.request.urlopen(url) as response:
-            data = json.loads(response.read())
-            carousel_books = data.get("items", [])
-            print("✅ Featured books loaded:", len(carousel_books))
-    except Exception as e:
-        print("❌ Primary fetch failed:", e)
+    # === Featured Books from Last 3 Search Queries ===
+    seen_terms = set()
+    recent_queries = []
+    for term in reversed(search_history_raw):
+        if term not in seen_terms:
+            recent_queries.append(term)
+            seen_terms.add(term)
+        if len(recent_queries) == 3:
+            break
 
-    # Fallback Attempt
+    if not recent_queries:
+        recent_queries = ["python programming"]
+
+    carousel_books_dict = {}
+
+    for query in recent_queries:
+        try:
+            encoded_query = urllib.parse.quote(query)
+            url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_query}&maxResults=5"
+            with urllib.request.urlopen(url) as response:
+                data = json.loads(response.read())
+                for item in data.get("items", []):
+                    book_id = item.get("id")
+                    if book_id and book_id not in carousel_books_dict:
+                        carousel_books_dict[book_id] = item
+                    if len(carousel_books_dict) >= 10:
+                        break
+        except Exception as e:
+            print(f"❌ Error fetching for query '{query}':", e)
+
+    carousel_books = list(carousel_books_dict.values())
+
+    # Fallback
     if not carousel_books:
         try:
-            url = "https://www.googleapis.com/books/v1/volumes?q=harry+potter&maxResults=10"
+            fallback = "harry potter"
+            url = f"https://www.googleapis.com/books/v1/volumes?q={fallback}&maxResults=10"
             with urllib.request.urlopen(url) as response:
                 data = json.loads(response.read())
                 carousel_books = data.get("items", [])
-                print("🟡 Fallback books loaded:", len(carousel_books))
-        except Exception as e:
-            print("❌ Fallback fetch failed:", e)
-
-    if not carousel_books:
-        print("⚠️ No books available for carousel.")
+        except:
+            print("⚠️ Fallback also failed.")
 
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -177,6 +186,7 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
         "genres": genres,
         "carousel_books": carousel_books
     })
+
 
 def format_search_label(raw_query: str) -> str:
     mapping = {
