@@ -42,12 +42,13 @@
         <input type="hidden" name="book_id" value="{{ book.id }}">
         <input type="hidden" name="title" value="{{ book.volumeInfo.title }}">
         <input type="hidden" name="authors" value="{{ book.volumeInfo.authors | join(', ') }}">
-        <input type="hidden" name="thumbnail" value="{{ book.volumeInfo.imageLinks.thumbnail if book.volumeInfo.imageLinks is defined }}">
+        <input type="hidden" name="thumbnail"
+          value="{{ book.volumeInfo.imageLinks.thumbnail if book.volumeInfo.imageLinks is defined }}">
         <button type="submit" class="btn btn-{{ 'danger' if is_favorite else 'primary' }}">
           {{ '❤️ Remove from Favorites' if is_favorite else 'Add to Favorites ❤️' }}
         </button>
       </form>
-      
+
 
       {% if user %}
       <hr>
@@ -68,7 +69,7 @@
         <input type="hidden" name="authors" value="{{ book.volumeInfo.authors | join(', ') }}">
         <input type="hidden" name="thumbnail"
           value="{{ book.volumeInfo.imageLinks.thumbnail if book.volumeInfo.imageLinks }}">
-        <button type="submit" class="btn btn-sm btn-outline-success mb-1">+ "{{ shelf.name }}"</button>
+        <button type="submit" class="btn btn-sm btn-success text-white mb-1">+ "{{ shelf.name }}"</button>
       </form>
       {% endif %}
       <br>
