@@ -299,13 +299,39 @@
         </div>
       </div>
     </div>
+        <!-- 🧩 Browse by Genre -->
+        <div class="col-12">
+          <div class="card card-modern">
+            <div class="card-body">
+              <div class="card-header-flex">
+                <h5 class="card-title">Browse by Genre</h5>
+              </div>
+              {% if genres %}
+              <div class="row row-cols-2 row-cols-md-4 g-3 mt-2">
+                {% for genre in genres %}
+                <div class="col">
+                  <a href="/search?filter=subject&q='{{ genre.link | urlencode }}'" class="text-decoration-none">
+                    <div class="card h-100 text-center p-3 shadow-sm border-0 genre-card hover-shadow" style="border-radius: 12px;">
+                      <div class="mb-2 fw-semibold">{{ genre.name }}</div>
+                    </div>
+                  </a>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p class="text-muted">No genres available right now.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+    </div>
     <!-- 📚 Featured Section -->
 <div class="mb-5">
-  <h4 class="mb-3">Recommended Books</h4>
+  <!-- <h4 class="mb-3">Recommended Books</h4>
 
-  {% if carousel_books %}
+  {% if carousel_books %} -->
   <!-- Carousel -->
-  <div id="bookCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+  <!-- <div id="bookCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
     <div class="carousel-inner">
       {% for book in carousel_books %}
         {% set info = book.volumeInfo %}
@@ -336,14 +362,14 @@
     <button class="carousel-control-next" type="button" data-bs-target="#bookCarousel" data-bs-slide="next">
       <span class="carousel-control-next-icon"></span>
     </button>
-  </div>
+  </div> -->
 
   <!-- Grid of Featured Books -->
-  <h5 class="mb-3">Featured Books</h5>
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3">
+  <h5 class="mb-3 mt-3" style="color: #e8ded0;">Featured Books</h5>
+  <div class="row row-cols-sm-1 row-cols-sm-2 row-cols-sm-3 row-cols-sm-4 row-cols-sm-5 row-cols-sm-6">
     {% for book in carousel_books %}
       {% set info = book.volumeInfo %}
-      <div class="col">
+      <div class="col mb-4">
         <div class="card shadow-sm">
           {% if info.imageLinks and info.imageLinks.thumbnail %}
             <img src="{{ info.imageLinks.thumbnail }}" class="card-img-top" alt="{{ info.title }}" style="height: 200px">
@@ -387,33 +413,7 @@
   {% endif %}
 </div>
 
-    <!-- 🧩 Browse by Genre -->
-    <div class="col-12">
-      <div class="card card-modern">
-        <div class="card-body">
-          <div class="card-header-flex">
-            <h5 class="card-title">Browse by Genre</h5>
-          </div>
-          {% if genres %}
-          <div class="row row-cols-2 row-cols-md-4 g-3 mt-2">
-            {% for genre in genres %}
-            <div class="col">
-              <a href="/search?filter=subject&q='{{ genre.link | urlencode }}'" class="text-decoration-none">
-                <div class="card h-100 text-center p-3 shadow-sm border-0 genre-card hover-shadow" style="border-radius: 12px;">
-                  <div class="mb-2 fw-semibold">{{ genre.name }}</div>
-                </div>
-              </a>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <p class="text-muted">No genres available right now.</p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-  </div>
+  <!-- </div> -->
 </div>
 {% endblock %}
 <script>
