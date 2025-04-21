@@ -4,7 +4,7 @@
 {% block content %}
 <style>
   body {
-    background: #7F694C ;
+    background: #7F694C;
   }
 
   .dashboard-header {
@@ -40,20 +40,21 @@
     overflow-y: auto;
     scrollbar-width: thin;
   }
-  .list-group{
+
+  .list-group {
     background: #d2b48c;
   }
 
   .list-group-item {
-    border:#d2b48c;
-  border-radius: 8px;
-  background-color:#d2b48c;
-  margin-bottom: 10px;
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
-  transition: background-color 0.2s ease;
+    border: #d2b48c;
+    border-radius: 8px;
+    background-color: #d2b48c;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+    transition: background-color 0.2s ease;
   }
 
   .list-group-item:last-child {
@@ -72,11 +73,12 @@
     object-fit: contain;
     margin-right: 10px;
   }
+
   .text-link {
-  font-weight: 500;
-  color: #333;
-  text-decoration: none;
-}
+    font-weight: 500;
+    color: #333;
+    text-decoration: none;
+  }
 
   .card-header-flex {
     display: flex;
@@ -90,9 +92,11 @@
     color: #999;
     margin-bottom: 0.5rem;
   }
-  .textbook{
-    color:antiquewhite;
+
+  .textbook {
+    color: antiquewhite;
   }
+
   a {
     color: #4c2c02;
     text-decoration: none;
@@ -127,35 +131,36 @@
     width: auto;
     max-height: 250px;
   }
-  .btn-outline-primary {
-  color:#4c2c02;
-  border: 1px solid #4c2c02;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  transition: all 0.2s ease-in-out;
-  background-color: transparent;
-}
 
-.btn-outline-primary:hover {
-  background-color: #4c2c02;
-  color: #fff;
-  text-decoration: none;
-  box-shadow: 0 2px 6px #4c2c02;
-}
+  .btn-outline-primary {
+    color: #4c2c02;
+    border: 1px solid #4c2c02;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease-in-out;
+    background-color: transparent;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: #4c2c02;
+    color: #fff;
+    text-decoration: none;
+    box-shadow: 0 2px 6px #4c2c02;
+  }
 </style>
 
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="dashboard-header">Welcome, {{ user }}!</h2>
-    
+
     <form method="get" action="/" class="d-flex align-items-center">
       <label for="filter" class="me-2 fw-semibold text-muted small">Sort by:</label>
       <select name="filter" id="filter" class="form-select form-select-sm w-auto me-2" onchange="this.form.submit()">
-        <option value="week" {% if filter == "week" %}selected{% endif %}>Popular this week</option>
-        <option value="month" {% if filter == "month" %}selected{% endif %}>Popular this month</option>
-        <option value="top" {% if filter == "top" %}selected{% endif %}>Top rated</option>
-        <option value="new" {% if filter == "new" %}selected{% endif %}>New arrivals</option>
+        <option value="week" {% if filter=="week" %}selected{% endif %}>Popular this week</option>
+        <option value="month" {% if filter=="month" %}selected{% endif %}>Popular this month</option>
+        <option value="top" {% if filter=="top" %}selected{% endif %}>Top rated</option>
+        <option value="new" {% if filter=="new" %}selected{% endif %}>New arrivals</option>
       </select>
     </form>
   </div>
@@ -164,25 +169,27 @@
   <div id="bookCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
     <div class="carousel-inner">
       {% for book in carousel_books %}
-        {% set info = book.volumeInfo %}
-        <div class="carousel-item {% if loop.first %}active{% endif %}">
-          <a href="/book/{{ book.id }}" class="text-decoration-none text-dark">
-            <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4 p-4 text-center">
-              {% if info.imageLinks and info.imageLinks.thumbnail %}
-                <img src="{{ info.imageLinks.thumbnail }}" alt="{{ info.title }}" class="rounded shadow" style="max-height: 250px;">
-              {% else %}
-                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="width:150px; height:200px;">No Image</div>
+      {% set info = book.volumeInfo %}
+      <div class="carousel-item {% if loop.first %}active{% endif %}">
+        <a href="/book/{{ book.id }}" class="text-decoration-none text-dark">
+          <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4 p-4 text-center">
+            {% if info.imageLinks and info.imageLinks.thumbnail %}
+            <img src="{{ info.imageLinks.thumbnail }}" alt="{{ info.title }}" class="rounded shadow"
+              style="max-height: 250px;">
+            {% else %}
+            <div class="bg-secondary text-white d-flex align-items-center justify-content-center"
+              style="width:150px; height:200px;">No Image</div>
+            {% endif %}
+            <div class="textbook mt-3 mt-md-0">
+              <h5 class="fw-bold mb-1">{{ info.title or 'Untitled' }}</h5>
+              {% if info.authors %}
+              <p class="mb-1">by {{ info.authors | join(', ') }}</p>
               {% endif %}
-              <div class="textbook mt-3 mt-md-0">
-                <h5 class="fw-bold mb-1">{{ info.title or 'Untitled' }}</h5>
-                {% if info.authors %}
-                  <p class="mb-1">by {{ info.authors | join(', ') }}</p>
-                {% endif %}
-                <small>Click to view details</small>
-              </div>
+              <small>Click to view details</small>
             </div>
-          </a>
-        </div>
+          </div>
+        </a>
+      </div>
       {% endfor %}
     </div>
 
@@ -299,119 +306,88 @@
         </div>
       </div>
     </div>
-        <!-- 🧩 Browse by Genre -->
-        <div class="col-12">
-          <div class="card card-modern">
-            <div class="card-body">
-              <div class="card-header-flex">
-                <h5 class="card-title">Browse by Genre</h5>
+  </div>
+
+  <!-- 🧩 Browse by Genre -->
+  <div class="container-fluid px-4 mb-4" style="margin-top: 30px;">
+    <div class="card card-modern w-100">
+      <div class="card-body">
+        <div class="card-header-flex mb-3">
+          <h5 class="card-title">Browse by Genre</h5>
+        </div>
+
+        {% if genres %}
+        <div class="row row-cols-2 row-cols-md-4 g-3 mt-2">
+          {% for genre in genres %}
+          <div class="col">
+            <a href="/search?filter=subject&q='{{ genre.link | urlencode }}'" class="text-decoration-none">
+              <div class="card h-100 text-center p-3 shadow-sm border-0 genre-card hover-shadow"
+                style="border-radius: 12px;">
+                <div class="mb-2 fw-semibold">{{ genre.name }}</div>
               </div>
-              {% if genres %}
-              <div class="row row-cols-2 row-cols-md-4 g-3 mt-2">
-                {% for genre in genres %}
-                <div class="col">
-                  <a href="/search?filter=subject&q='{{ genre.link | urlencode }}'" class="text-decoration-none">
-                    <div class="card h-100 text-center p-3 shadow-sm border-0 genre-card hover-shadow" style="border-radius: 12px;">
-                      <div class="mb-2 fw-semibold">{{ genre.name }}</div>
-                    </div>
-                  </a>
-                </div>
-                {% endfor %}
-              </div>
-              {% else %}
-              <p class="text-muted">No genres available right now.</p>
-              {% endif %}
-            </div>
+            </a>
           </div>
+          {% endfor %}
         </div>
+        {% else %}
+        <p class="text-muted">No genres available right now.</p>
+        {% endif %}
+      </div>
     </div>
-    <!-- 📚 Featured Section -->
-<div class="mb-5">
-  <!-- <h4 class="mb-3">Recommended Books</h4>
+  </div>
 
-  {% if carousel_books %} -->
-  <!-- Carousel -->
-  <!-- <div id="bookCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-    <div class="carousel-inner">
-      {% for book in carousel_books %}
-        {% set info = book.volumeInfo %}
-        <div class="carousel-item {% if loop.first %}active{% endif %}">
-          <a href="/book/{{ book.id }}" class="text-decoration-none text-dark">
-            <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4 p-4 text-center">
-              {% if info.imageLinks and info.imageLinks.thumbnail %}
-                <img src="{{ info.imageLinks.thumbnail }}" alt="{{ info.title }}" class="rounded shadow" style="max-height: 250px;">
-              {% else %}
-                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="width:150px; height:200px;">No Image</div>
-              {% endif %}
-              <div class="textbook mt-3 mt-md-0">
-                <h5 class="fw-bold mb-1">{{ info.title or 'Untitled' }}</h5>
-                {% if info.authors %}
-                  <p class="mb-1">by {{ info.authors | join(', ') }}</p>
-                {% endif %}
-                <small class="">Click to view details</small>
-              </div>
-            </div>
-          </a>
-        </div>
-      {% endfor %}
-    </div>
+  <!-- 📚 Featured Section -->
+  <div class="mb-5">
 
-    <button class="carousel-control-prev" type="button" data-bs-target="#bookCarousel" data-bs-slide="prev">
-      <span class="carousel-control-prev-icon"></span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#bookCarousel" data-bs-slide="next">
-      <span class="carousel-control-next-icon"></span>
-    </button>
-  </div> -->
-
-  <!-- Grid of Featured Books -->
-  <h5 class="mb-3 mt-3" style="color: #e8ded0;">Featured Books</h5>
-  <div class="row row-cols-sm-1 row-cols-sm-2 row-cols-sm-3 row-cols-sm-4 row-cols-sm-5 row-cols-sm-6">
-    {% for book in carousel_books %}
+    <!-- Grid of Featured Books -->
+    <h5 class="mb-3 mt-3" style="color: #e8ded0;">Featured Books</h5>
+    <div class="row row-cols-sm-1 row-cols-sm-2 row-cols-sm-3 row-cols-sm-4 row-cols-sm-5 row-cols-sm-6">
+      {% for book in featured_books %}
       {% set info = book.volumeInfo %}
       <div class="col mb-4">
         <div class="card shadow-sm">
           {% if info.imageLinks and info.imageLinks.thumbnail %}
-            <img src="{{ info.imageLinks.thumbnail }}" class="card-img-top" alt="{{ info.title }}" style="height: 200px">
+          <img src="{{ info.imageLinks.thumbnail }}" class="card-img-top" alt="{{ info.title }}" style="height: 200px">
           {% else %}
-            <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">No Image</div>
+          <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+            No Image</div>
           {% endif %}
           <div class="card-body d-flex flex-column">
             <h6 class="card-title mb-1">
               {% if info.title and info.title|length > 40 %}
-                <span class="d-inline-block text-truncate" style="max-width: 100%;" data-bs-toggle="collapse" data-bs-target="#title-{{ book.id }}" aria-expanded="false" aria-controls="title-{{ book.id }}">
-                  {{ info.title[:50] }}...
-                </span>
-                <div class="collapse mt-1" id="title-{{ book.id }}">
-                  <a href="/book/{{ book.id }}" class="text-decoration-none">{{ info.title }}</a>
-                </div>
-                <a class="btn btn-link p-0 small" data-bs-toggle="collapse" href="#title-{{ book.id }}" role="button" aria-expanded="false" aria-controls="title-{{ book.id }}"></a>
+              <span class="d-inline-block text-truncate" style="max-width: 100%;" data-bs-toggle="collapse"
+                data-bs-target="#title-{{ book.id }}" aria-expanded="false" aria-controls="title-{{ book.id }}">
+                {{ info.title[:50] }}...
+              </span>
+              <div class="collapse mt-1" id="title-{{ book.id }}">
+                <a href="/book/{{ book.id }}" class="text-decoration-none">{{ info.title }}</a>
+              </div>
+              <a class="btn btn-link p-0 small" data-bs-toggle="collapse" href="#title-{{ book.id }}" role="button"
+                aria-expanded="false" aria-controls="title-{{ book.id }}"></a>
               {% else %}
-                <a href="/book/{{ book.id }}" class="text-decoration-none">{{ info.title or 'Untitled' }}</a>
+              <a href="/book/{{ book.id }}" class="text-decoration-none">{{ info.title or 'Untitled' }}</a>
               {% endif %}
             </h6>
             {% if info.authors %}
             {% set author_string = info.authors | join(', ') %}
             {% if author_string | length > 20 %}
-              <p class="card-text text-muted small text-truncate mb-0">{{ author_string[:40] }}...</p>
-              <div class="collapse mt-1" id="author-{{ book.id }}">
-                <p class="card-text text-muted small mb-0">{{ author_string }}</p>
-              </div>
-              <a class="btn btn-link p-0 small toggle-link" data-bs-toggle="collapse" href="#author-{{ book.id }}" role="button" aria-expanded="false">
-              </a>
+            <p class="card-text text-muted small text-truncate mb-0">{{ author_string[:40] }}...</p>
+            <div class="collapse mt-1" id="author-{{ book.id }}">
+              <p class="card-text text-muted small mb-0">{{ author_string }}</p>
+            </div>
+            <a class="btn btn-link p-0 small toggle-link" data-bs-toggle="collapse" href="#author-{{ book.id }}"
+              role="button" aria-expanded="false">
+            </a>
             {% else %}
-              <p class="card-text text-muted small mb-0">by {{ author_string }}</p>
+            <p class="card-text text-muted small mb-0">by {{ author_string }}</p>
             {% endif %}
-          {% endif %}
+            {% endif %}
           </div>
         </div>
       </div>
-    {% endfor %}
+      {% endfor %}
+    </div>
   </div>
-  {% else %}
-    <p class="text-muted">No featured books available at the moment.</p>
-  {% endif %}
-</div>
 
   <!-- </div> -->
 </div>

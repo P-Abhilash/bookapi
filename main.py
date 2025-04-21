@@ -69,11 +69,13 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     if not user:
         return RedirectResponse(url="/login")
 
+    filter_option = request.query_params.get("filter", "week")
+
     favorites = db.query(Favorite).filter_by(username=user).limit(5).all()
     shelves = db.query(Shelf).filter_by(username=user).all()
 
     # === Search History ===
-    search_history_raw = request.session.get(f"search_history_{user}", [])
+    search_history_raw = list(reversed(request.session.get(f"search_history_{user}", [])))
     search_history_display = []
     for item in search_history_raw:
         if item.startswith("inauthor:"):
@@ -91,90 +93,75 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     viewed_books = request.session.get(f"viewed_books_{user}", [])
     seen_ids = set()
     filtered_books = []
-    for book in reversed(viewed_books):
+    for book in viewed_books:
         if book['id'] not in seen_ids:
             seen_ids.add(book['id'])
             filtered_books.append(book)
     filtered_books = filtered_books[:5]
 
-    # === Genres ===
-    genres = []
-    default = [
-        {"name": "Romance", "link": "Romance", "count": 0},
-        {"name": "Mystery", "link": "Mystery", "count": 0},
-        {"name": "Fantasy", "link": "Fantasy", "count": 0},
-        {"name": "Action", "link": "Action", "count": 0},
-        {"name": "Science Fiction", "link": "Science Fiction", "count": 0},
-        {"name": "Horror", "link": "Horror", "count": 0},
-        {"name": "Adventure", "link": "Adventure", "count": 0},
-        {"name": "Western", "link": "Western", "count": 0},
+        # === Genres ===
+    default_genres = [
+        {"name": "Romance", "link": "Romance"},
+        {"name": "Mystery", "link": "Mystery"},
+        {"name": "Fantasy", "link": "Fantasy"},
+        {"name": "Action", "link": "Action"},
+        {"name": "Science Fiction", "link": "Science Fiction"},
+        {"name": "Horror", "link": "Horror"},
+        {"name": "Adventure", "link": "Adventure"},
+        {"name": "Western", "link": "Western"},
     ]
+
+    # Start with the default genres
+    genres = list(default_genres)
+
+    # Add genres from favorites
+    existing_names = set(g["name"] for g in genres)
 
     for favorite in db.query(Favorite).filter_by(username=user).all():
         url = f"https://www.googleapis.com/books/v1/volumes/{favorite.book_id}"
         try:
             with urllib.request.urlopen(url) as response:
                 book_data = json.loads(response.read())
-                volume_info = book_data.get('volumeInfo', {})
-                for category in volume_info.get('categories', []):
-                    check = True
-                    for index, genre in enumerate(genres):
-                        if genre["name"] == category:
-                            genres[index]["count"] += 1
-                            check = False
-                            break
-                    if check:
-                        name = category.replace("/ General", "").strip() if "/ General" in category else category
-                        genres.append({"name": name, "link": category, "count": 1})
+                volume_info = book_data.get("volumeInfo", {})
+                for category in volume_info.get("categories", []):
+                    clean_name = category.replace("/ General", "").strip()
+                    if clean_name not in existing_names:
+                        genres.append({"name": clean_name, "link": category})
+                        existing_names.add(clean_name)
         except:
-            print(f"Book {favorite.book_id} not found")
+            print(f"Could not retrieve categories for book {favorite.book_id}")
+            
+        genres = genres[:20]
 
-    genres = sorted(genres, key=lambda x: x["count"], reverse=True)
-    if not genres:
-        genres = default
 
-    # === Featured Books from Last 3 Search Queries ===
-    seen_terms = set()
-    recent_queries = []
-    for term in reversed(search_history_raw):
-        if term not in seen_terms:
-            recent_queries.append(term)
-            seen_terms.add(term)
-        if len(recent_queries) == 3:
-            break
+    # === Featured Books based on Sort Filter ===
+    search_terms = {
+        "week": "trending books this week",
+        "month": "bestsellers this month",
+        "top": "top rated books",
+        "new": "new book releases"
+    }
 
-    if not recent_queries:
-        recent_queries = ["python programming"]
+    selected_query = search_terms.get(filter_option, "trending books")
 
-    carousel_books_dict = {}
-
-    for query in recent_queries:
-        try:
-            encoded_query = urllib.parse.quote(query)
-            url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_query}&maxResults=5"
-            with urllib.request.urlopen(url) as response:
-                data = json.loads(response.read())
-                for item in data.get("items", []):
-                    book_id = item.get("id")
-                    if book_id and book_id not in carousel_books_dict:
-                        carousel_books_dict[book_id] = item
-                    if len(carousel_books_dict) >= 10:
-                        break
-        except Exception as e:
-            print(f"❌ Error fetching for query '{query}':", e)
-
-    carousel_books = list(carousel_books_dict.values())
-
-    # Fallback
-    if not carousel_books:
-        try:
-            fallback = "harry potter"
-            url = f"https://www.googleapis.com/books/v1/volumes?q={fallback}&maxResults=10"
-            with urllib.request.urlopen(url) as response:
-                data = json.loads(response.read())
-                carousel_books = data.get("items", [])
-        except:
-            print("⚠️ Fallback also failed.")
+    carousel_books = []
+    featured_books = []
+    try:
+        url = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(selected_query)}&maxResults=10"
+        with urllib.request.urlopen(url) as response:
+            data = json.loads(response.read())
+            carousel_books = data.get("items", [])
+    except Exception as e:
+        print("Error fetching featured books:", e)
+        
+    try:
+        feature_query = "best books of 2024"
+        url_feat = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(feature_query)}&maxResults=10"
+        with urllib.request.urlopen(url_feat) as response:
+            data_feat = json.loads(response.read())
+            featured_books = data_feat.get("items", [])
+    except Exception as e:
+        print("❌ Error fetching featured books:", e)
 
     return templates.TemplateResponse("index.html", {
         "request": request,
@@ -184,8 +171,11 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
         "search_history_zipped": search_history_zipped,
         "viewed_books": filtered_books,
         "genres": genres,
-        "carousel_books": carousel_books
+        "carousel_books": carousel_books,
+        "featured_books": featured_books,
+        "filter": filter_option
     })
+
 
 
 def format_search_label(raw_query: str) -> str:
