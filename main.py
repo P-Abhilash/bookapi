@@ -135,7 +135,6 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     genres = sorted(genres, key=lambda x: x["count"], reverse=True)
     if not genres:
         genres = default
-    print(genres)
     genres = genres[:20]
 
 
