@@ -100,8 +100,7 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     filtered_books = filtered_books[:5]
 
         # === Genres ===
-    genres = []
-    default = [
+    genres =  [
          {"name": "Romance", "link": "Romance", "count": 0},
          {"name": "Mystery", "link": "Mystery", "count": 0},
          {"name": "Fantasy", "link": "Fantasy", "count": 0},
@@ -136,8 +135,8 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     genres = sorted(genres, key=lambda x: x["count"], reverse=True)
     if not genres:
         genres = default
-            
-        genres = genres[:20]
+    print(genres)
+    genres = genres[:20]
 
 
     # === Featured Books based on Sort Filter ===
