@@ -100,36 +100,42 @@ async def homepage(request: Request, db: Session = Depends(get_db)):
     filtered_books = filtered_books[:5]
 
         # === Genres ===
-    default_genres = [
-        {"name": "Romance", "link": "Romance"},
-        {"name": "Mystery", "link": "Mystery"},
-        {"name": "Fantasy", "link": "Fantasy"},
-        {"name": "Action", "link": "Action"},
-        {"name": "Science Fiction", "link": "Science Fiction"},
-        {"name": "Horror", "link": "Horror"},
-        {"name": "Adventure", "link": "Adventure"},
-        {"name": "Western", "link": "Western"},
+    genres = []
+    default = [
+         {"name": "Romance", "link": "Romance", "count": 0},
+         {"name": "Mystery", "link": "Mystery", "count": 0},
+         {"name": "Fantasy", "link": "Fantasy", "count": 0},
+         {"name": "Action", "link": "Action", "count": 0},
+         {"name": "Science Fiction", "link": "Science Fiction", "count": 0},
+         {"name": "Horror", "link": "Horror", "count": 0},
+         {"name": "Adventure", "link": "Adventure", "count": 0},
+         {"name": "Western", "link": "Western", "count": 0},
     ]
 
     # Start with the default genres
-    genres = list(default_genres)
-
-    # Add genres from favorites
-    existing_names = set(g["name"] for g in genres)
 
     for favorite in db.query(Favorite).filter_by(username=user).all():
         url = f"https://www.googleapis.com/books/v1/volumes/{favorite.book_id}"
         try:
             with urllib.request.urlopen(url) as response:
                 book_data = json.loads(response.read())
-                volume_info = book_data.get("volumeInfo", {})
-                for category in volume_info.get("categories", []):
-                    clean_name = category.replace("/ General", "").strip()
-                    if clean_name not in existing_names:
-                        genres.append({"name": clean_name, "link": category})
-                        existing_names.add(clean_name)
+                volume_info = book_data.get('volumeInfo', {})
+                for category in volume_info.get('categories', []):
+                     check = True
+                     for index, genre in enumerate(genres):
+                         if genre["name"] == category:
+                             genres[index]["count"] += 1
+                             check = False
+                             break
+                     if check:
+                         name = category.replace("/ General", "").strip() if "/ General" in category else category
+                         genres.append({"name": name, "link": category, "count": 1})
         except:
-            print(f"Could not retrieve categories for book {favorite.book_id}")
+             print(f"Book {favorite.book_id} not found")
+ 
+    genres = sorted(genres, key=lambda x: x["count"], reverse=True)
+    if not genres:
+        genres = default
             
         genres = genres[:20]
 
