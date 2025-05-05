@@ -4,12 +4,12 @@
 {% block content %}
 <style>
   body {
-    background: #7F694C;
+    /* background: #e3ddd6; */
   }
 
   .dashboard-header {
     font-weight: 700;
-    color: #e8ded0;
+    color: #0e0c09;
   }
 
   .card-modern {
@@ -32,7 +32,7 @@
     font-weight: 600;
     font-size: 1.1rem;
     margin-bottom: 0.8rem;
-    color: #4c2c02;
+    color: #0d0a06;
   }
 
   .scrollable-card {
@@ -94,7 +94,7 @@
   }
 
   .textbook {
-    color: antiquewhite;
+    color: rgb(14, 10, 4);
   }
 
   a {
@@ -130,6 +130,19 @@
     object-fit: contain;
     width: auto;
     max-height: 250px;
+  }
+
+  .carousel {
+    border: 2px solid #a88658;
+    border-radius: 12px;
+    padding: 10px;
+    background-color: #fff8f0;
+  }
+
+  .carousel-control-next-icon,
+  .carousel-control-prev-icon {
+    filter: invert(100%);
+    /* Turns it white */
   }
 
   .btn-outline-primary {
@@ -340,7 +353,7 @@
   <div class="mb-5">
 
     <!-- Grid of Featured Books -->
-    <h5 class="mb-3 mt-3" style="color: #e8ded0;">Featured Books</h5>
+    <h5 class="mb-3 mt-3" style="color: #0a0702;">Featured Books</h5>
     <div class="row row-cols-sm-1 row-cols-sm-2 row-cols-sm-3 row-cols-sm-4 row-cols-sm-5 row-cols-sm-6">
       {% for book in featured_books %}
       {% set info = book.volumeInfo %}
