@@ -10,6 +10,7 @@ __pycache__/
 *.env
 .env
 venv/
+Lib/site-packages
 Lib/
 Include/
 Scripts/
