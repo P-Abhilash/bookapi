@@ -3,26 +3,20 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Form, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from models import Favorite, Shelf, ShelfBook
 from typing import Optional
 import json
 import urllib.request, urllib.parse
 from fastapi import FastAPI, HTTPException, Request, Form, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from starlette.middleware.sessions import SessionMiddleware
 from supabase_client import supabase
-import os
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-import requests
 from core.deps import get_db
 from core.security import get_current_user_email
-from models import Favorite
 
 router = APIRouter(tags=["books"])
 templates = Jinja2Templates(directory="templates")
