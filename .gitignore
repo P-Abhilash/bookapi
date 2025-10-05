@@ -17,3 +17,5 @@ Scripts/
 pyvenv.cfg
 app.db
 service-account.json
+*.key
+*.pem
