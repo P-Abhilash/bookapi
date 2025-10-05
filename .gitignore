@@ -16,3 +16,4 @@ Include/
 Scripts/
 pyvenv.cfg
 app.db
+service-account.json
