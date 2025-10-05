@@ -1,14 +1,20 @@
 # routers/favorites.py
 import urllib.request, json
+import os
 
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from supabase_client import supabase
 from core.security import get_current_user_email
+import logging
+cloud_logger = logging.getLogger("bookshelf")
+
 
 router = APIRouter(tags=["favorites"])
 templates = Jinja2Templates(directory="templates")
+
+API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 
 
 @router.get("/favorites", response_class=HTMLResponse)
@@ -43,7 +49,7 @@ async def add_favorite(
     # --- Fetch categories once from Google Books ---
     categories = ""
     try:
-        url = f"https://www.googleapis.com/books/v1/volumes/{book_id}"
+        url = f"https://www.googleapis.com/books/v1/volumes/{book_id}?key={API_KEY}"
         with urllib.request.urlopen(url) as response:
             data = json.loads(response.read())
             volume_info = data.get("volumeInfo", {})
@@ -52,7 +58,7 @@ async def add_favorite(
                 categories = ", ".join(cats)
     except Exception as e:
         print("⚠️ Could not fetch categories:", e)
-
+    cloud_logger.info(f"💖 {user_email} added '{title}' to favorites (Book ID: {book_id})") 
     # --- Prevent duplicates ---
     existing = supabase.table("favorites") \
         .select("*") \
@@ -78,7 +84,7 @@ async def remove_favorite(request: Request, book_id: str = Form(...)):
     user_email = get_current_user_email(request)
     if not user_email:
         return RedirectResponse(url="/login", status_code=302)
-
+    cloud_logger.info(f"💔 {user_email} removed book {book_id} from favorites")
     supabase.table("favorites") \
         .delete() \
         .eq("user_email", user_email) \

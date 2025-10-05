@@ -5,6 +5,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from supabase_client import supabase
 from core.security import get_current_user_email
+import logging
+cloud_logger = logging.getLogger("bookshelf")
 
 router = APIRouter(tags=["shelves"])
 templates = Jinja2Templates(directory="templates")
@@ -76,7 +78,7 @@ async def create_shelf(request: Request, name: str = Form(...)):
     user_email = get_current_user_email(request)
     if not user_email:
         return RedirectResponse(url="/login")
-
+    cloud_logger.info(f"🪣 {user_email} created new shelf: {name}")
     # Prevent duplicate shelf
     existing = supabase.table("shelves") \
         .select("*") \
@@ -98,7 +100,8 @@ async def delete_shelf(request: Request, shelf_id: int = Form(...)):
     user_email = get_current_user_email(request)
     if not user_email:
         return RedirectResponse(url="/login")
-
+    
+    cloud_logger.info(f"🗑️ {user_email} deleted shelf ID: {shelf_id}")
     # Delete all shelf books first
     supabase.table("shelf_books").delete().eq("shelf_id", shelf_id).execute()
     # Delete shelf

@@ -1,48 +1,40 @@
 # routers/books.py
-from fastapi import FastAPI, Depends, HTTPException, Request, Form, Response
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 from typing import Optional
-import json
-import urllib.request, urllib.parse
-from fastapi import FastAPI, HTTPException, Request, Form, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+import os
+import  urllib.parse
 from supabase_client import supabase
-from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from core.deps import get_db
 from core.security import get_current_user_email
+import httpx
+import logging
+cloud_logger = logging.getLogger("bookshelf")
+
+CACHE_EXPIRY_HOURS = 72  # adjust to taste (3 days)
 
 router = APIRouter(tags=["books"])
 templates = Jinja2Templates(directory="templates")
 
 GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes"
+API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 
 @router.get("/search", response_class=HTMLResponse)
-async def search_books(request: Request,q: Optional[str] = None,filter: Optional[str] = "",db: Session = Depends(get_db)):
+async def search_books(request: Request, q: Optional[str] = None, filter: Optional[str] = ""):
     user = get_current_user_email(request)
     if not user:
         return RedirectResponse(url="/login")
 
     books = []
-
-    # Get or initialize session history
     search_history_raw = request.session.get(f"search_history_{user}", [])
 
-    # Construct query
     query = f"{filter}:{q}" if filter else q
 
-    # Add to history ONLY if query is valid and not a duplicate
     if query and query not in search_history_raw:
         search_history_raw.append(query)
-        request.session[f"search_history_{user}"] = search_history_raw[-10:]  # keep last 10
+        request.session[f"search_history_{user}"] = search_history_raw[-10:]
 
-    # Build display-friendly version
     search_history_display = []
     for item in search_history_raw:
         if item.startswith("inauthor:"):
@@ -55,21 +47,20 @@ async def search_books(request: Request,q: Optional[str] = None,filter: Optional
             label = item
         search_history_display.append(label)
 
-    # Combine both for display
     search_history_zipped = list(zip(search_history_raw, search_history_display))
 
-    # Fetch books
     if query:
-        try:
-            url = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(query)}"
-            with urllib.request.urlopen(url) as response:
-                data = json.loads(response.read())
-                books = data.get("items", [])
-        except Exception as e:
-            print("Google Books API error:", e)
-            url = "Failed"
-    else:
-        url = "None"
+        async with httpx.AsyncClient() as client:
+            try:
+                cloud_logger.info(f"🔍 User {user} searched for: {query}")
+                url = f"{GOOGLE_BOOKS_API}?q={urllib.parse.quote(query)}&key={API_KEY}"
+                response = await client.get(url, timeout=10.0)
+                if response.status_code == 200:
+                    data = response.json()
+                    books = data.get("items", [])
+                    cloud_logger.info(f"📚 Found {len(books)} books for query: {query}")
+            except Exception as e:
+                print("Google Books API error:", e)
 
     return templates.TemplateResponse("search.html", {
         "request": request,
@@ -80,78 +71,103 @@ async def search_books(request: Request,q: Optional[str] = None,filter: Optional
         "search_history_zipped": search_history_zipped,
     })
 
-
-
 @router.get("/book/{book_id}", response_class=HTMLResponse)
-async def book_detail(book_id: str, request: Request, db: Session = Depends(get_db)):
-    url = f"https://www.googleapis.com/books/v1/volumes/{book_id}"
-    try:
-        with urllib.request.urlopen(url) as response:
-            book_data = json.loads(response.read())
-    except:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    user = get_current_user_email(request)
-    if not user:
+async def book_detail(book_id: str, request: Request):
+    user_email = get_current_user_email(request)
+    if not user_email:
         return RedirectResponse(url="/login")
 
-    # Extract info
-    title = book_data["volumeInfo"].get("title")
-    thumbnail = book_data["volumeInfo"].get("imageLinks", {}).get("thumbnail")
-    # Inside your /book/{book_id} route
-    is_favorite = (
-    supabase.table("favorites")
-    .select("id")
-    .eq("user_email", user)
-    .eq("book_id", book_id)
-    .execute()
-    .data
-)
-    is_favorite = len(is_favorite) > 0
+    # --- Check cache ---
+    cache_result = (
+        supabase.table("books_cache")
+        .select("data, created_at")
+        .eq("id", book_id)
+        .execute()
+        .data
+    )
 
+    book_data = None
+    if cache_result:
+        cached = cache_result[0]
+        created_at = datetime.fromisoformat(cached["created_at"].ljust(26, "0"))
+        if datetime.utcnow() - created_at < timedelta(hours=CACHE_EXPIRY_HOURS):
+            book_data = cached["data"]
 
+    # --- Fetch from Google Books if not cached ---
+    if not book_data:
+        async with httpx.AsyncClient() as client:
+            # Try volumeId first
+            try:
+                url = f"{GOOGLE_BOOKS_API}/{book_id}?key={API_KEY}"
+                response = await client.get(url, timeout=10.0)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("volumeInfo"):
+                        book_data = data
+            except Exception as e:
+                print("Volume ID fetch error:", e)
 
-    # --- HANDLE VIEWED BOOKS ---
-    viewed_books = request.session.get(f"viewed_books_{user}", [])
-    viewed_books = [b for b in viewed_books if b["id"] != book_id]
+            # If not found, try ISBN fallback (still inside same client)
+            if not book_data:
+                try:
+                    url = f"{GOOGLE_BOOKS_API}?q=isbn:{book_id}&key={API_KEY}"
+                    response = await client.get(url, timeout=10.0)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if data.get("totalItems", 0) > 0:
+                            book_data = data["items"][0]
+                except Exception as e:
+                    print("ISBN fetch error:", e)
 
-    # Add to front
-    viewed_books.insert(0, {
-        "id": book_id,
-        "title": title,
-        "thumbnail": thumbnail
-    })
+        # Cache the result
+        if book_data:
+            try:
+                title = book_data["volumeInfo"].get("title")
+                authors = book_data["volumeInfo"].get("authors", [])
+                thumbnail = book_data["volumeInfo"].get("imageLinks", {}).get("thumbnail")
+                supabase.table("books_cache").upsert({
+                    "id": book_id,
+                    "title": title,
+                    "authors": authors,
+                    "thumbnail": thumbnail,
+                    "data": book_data,
+                    "created_at": datetime.utcnow().isoformat()
+                }).execute()
+            except Exception as e:
+                print("Cache insert error:", e)
 
-    # Limit to 10
-    request.session[f"viewed_books_{user}"] = viewed_books[:10]
-
-    # Fetch shelves & shelfBooks for current user
-    shelves = []
-    shelf_books = []
-    if user:
-        # Fetch shelves & shelfBooks for current user (Supabase)
-        shelves = (
-            supabase.table("shelves")
-            .select("*")
-            .eq("user_email", user)
-            .execute()
-            .data or []
+    # --- Not found handler ---
+    if not book_data:
+        return templates.TemplateResponse(
+            "book_not_found.html",
+            {"request": request, "user": user_email, "book_id": book_id},
+            status_code=404
         )
 
-        shelf_books = (
-            supabase.table("shelf_books")
-            .select("shelf_id")
-            .eq("book_id", book_id)
-            .execute()
-            .data or []
-        )
+    # --- Favorites ---
+    fav_check = (
+        supabase.table("favorites")
+        .select("id")
+        .eq("user_email", user_email)
+        .eq("book_id", book_id)
+        .execute()
+        .data
+    )
+    is_favorite = bool(fav_check)
 
+    # --- Shelves ---
+    shelves_res = supabase.table("shelves").select("*").eq("user_email", user_email).execute()
+    shelves = shelves_res.data or []
+
+    shelf_books_res = supabase.table("shelf_books").select("shelf_id, book_id").eq("book_id", book_id).execute()
+    shelf_books = [s["shelf_id"] for s in shelf_books_res.data] if shelf_books_res.data else []
+
+    # --- Render ---
     return templates.TemplateResponse("book_detail.html", {
         "request": request,
         "book": book_data,
-        "user": user,
+        "user": user_email,
+        "is_favorite": is_favorite,
         "shelves": shelves,
-        "shelf_books": [sb["shelf_id"] for sb in shelf_books],
-        "is_favorite": is_favorite
+        "shelf_books": shelf_books
     })
-

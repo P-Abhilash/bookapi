@@ -5,21 +5,23 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from supabase_client import supabase
 from core.security import get_current_user_email
-import urllib.request, urllib.parse, json
+import urllib.parse
+import os
+import httpx
 
+API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="templates")
 
-
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
-    user_email = get_current_user_email(request)
-    if not user_email:
+    user = request.session.get("user")
+    if not user:
         return RedirectResponse(url="/login", status_code=302)
 
+    user_email = user["email"]
     filter_option = request.query_params.get("filter", "week")
 
-    # === Favorites (limit 5) ===
     favorites = (
         supabase.table("favorites")
         .select("*")
@@ -29,7 +31,6 @@ async def homepage(request: Request):
         .data or []
     )
 
-    # === Shelves (limit 5) ===
     shelves = (
         supabase.table("shelves")
         .select("*")
@@ -39,7 +40,6 @@ async def homepage(request: Request):
         .data or []
     )
 
-    # === Search History ===
     search_history_raw = list(reversed(request.session.get(f"search_history_{user_email}", [])))
     search_history_display = []
     for item in search_history_raw:
@@ -54,7 +54,6 @@ async def homepage(request: Request):
         search_history_display.append(label)
     search_history_zipped = list(zip(search_history_raw, search_history_display))
 
-    # === Recently Viewed ===
     viewed_books = request.session.get(f"viewed_books_{user_email}", [])
     seen_ids = set()
     filtered_books = []
@@ -64,7 +63,6 @@ async def homepage(request: Request):
             filtered_books.append(book)
     filtered_books = filtered_books[:5]
 
-    # === Genres ===
     genres = [
         {"name": "Romance", "link": "Romance", "count": 0},
         {"name": "Mystery", "link": "Mystery", "count": 0},
@@ -76,8 +74,7 @@ async def homepage(request: Request):
         {"name": "Western", "link": "Western", "count": 0},
     ]
 
-    # Count categories from favorites (Supabase column)
-    genre_map = {g["name"]: g for g in genres}  # quick lookup
+    genre_map = {g["name"]: g for g in genres}
     for fav in favorites:
         if fav.get("categories"):
             for c in fav["categories"].split(","):
@@ -88,10 +85,8 @@ async def homepage(request: Request):
                     genres.append({"name": c, "link": c, "count": 1})
                     genre_map[c] = genres[-1]
 
-    # Sort by count, top 20
     genres = sorted(genres, key=lambda x: x["count"], reverse=True)[:20]
 
-    # === Featured Books ===
     search_terms = {
         "week": "trending books this week",
         "month": "bestsellers this month",
@@ -101,26 +96,29 @@ async def homepage(request: Request):
     selected_query = search_terms.get(filter_option, "trending books")
 
     carousel_books, featured_books = [], []
-    try:
-        url = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(selected_query)}&maxResults=10"
-        with urllib.request.urlopen(url) as response:
-            data = json.loads(response.read())
-            carousel_books = data.get("items", [])
-    except Exception as e:
-        print("Error fetching featured books:", e)
+    async with httpx.AsyncClient() as client:
+        try:
+            url = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(selected_query)}&maxResults=10&key={API_KEY}"
+            response = await client.get(url, timeout=10.0)
+            if response.status_code == 200:
+                data = response.json()
+                carousel_books = data.get("items", [])
+        except Exception as e:
+            print("Error fetching carousel books:", e)
 
-    try:
-        feature_query = "best books of 2024"
-        url_feat = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(feature_query)}&maxResults=10"
-        with urllib.request.urlopen(url_feat) as response:
-            data_feat = json.loads(response.read())
-            featured_books = data_feat.get("items", [])
-    except Exception as e:
-        print("❌ Error fetching featured books:", e)
+        try:
+            feature_query = "best books of 2024"
+            url_feat = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(feature_query)}&maxResults=10&key={API_KEY}"
+            response_feat = await client.get(url_feat, timeout=10.0)
+            if response_feat.status_code == 200:
+                data_feat = response_feat.json()
+                featured_books = data_feat.get("items", [])
+        except Exception as e:
+            print("❌ Error fetching featured books:", e)
 
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "user": user_email,
+        "user": user,
         "favorites": favorites,
         "shelves": shelves,
         "search_history_zipped": search_history_zipped,

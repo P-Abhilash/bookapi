@@ -1,9 +1,6 @@
-{% extends "base.html" %} {% block title %}Sign Up{% endblock %} {% block
+{% extends "boilerplate.html" %} {% block title %}Sign Up{% endblock %} {% block
 content %}
-<div
-  class="card mx-auto p-4 shadow"
-  style="max-width: 400px; background: bisque"
->
+<div class="card mx-auto p-4 shadow" style="max-width: 400px; background: bisque">
   <h4 class="text-center">Sign Up</h4>
   {% if error %}
   <div class="alert alert-danger">{{ error }}</div>
@@ -11,25 +8,9 @@ content %}
   <div class="alert alert-success">{{ success }}</div>
   {% endif %}
   <form method="post" action="/signup">
-    <input
-      type="email"
-      name="email"
-      class="form-control mb-2"
-      placeholder="Email"
-      required
-    />
-    <input
-      type="password"
-      name="password"
-      class="form-control mb-3"
-      placeholder="Password"
-      required
-    />
-    <button
-      type="submit"
-      class="btn btn-success w-100"
-      style="background: #4c2c02"
-    >
+    <input type="email" name="email" class="form-control mb-2" placeholder="Email" required />
+    <input type="password" name="password" class="form-control mb-3" placeholder="Password" required />
+    <button type="submit" class="btn btn-success w-100" style="background: #4c2c02">
       Sign Up
     </button>
   </form>

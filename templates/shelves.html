@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "boilerplate.html" %}
 {% block title %}My Shelves{% endblock %}
 
 {% block content %}
@@ -15,19 +15,19 @@
   </form>
 
   {% if shelves %}
-    <ul class="list-group mt-4">
-      {% for shelf in shelves %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          <a href="/shelf/{{ shelf.id }}">{{ shelf.name }}</a>
-          <form method="post" action="/delete-shelf" class="d-inline">
-            <input type="hidden" name="shelf_id" value="{{ shelf.id }}">
-            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-          </form>
-        </li>
-      {% endfor %}
-    </ul>
+  <ul class="list-group mt-4">
+    {% for shelf in shelves %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <a href="/shelf/{{ shelf.id }}">{{ shelf.name }}</a>
+      <form method="post" action="/delete-shelf" class="d-inline">
+        <input type="hidden" name="shelf_id" value="{{ shelf.id }}">
+        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
   {% else %}
-    <p class="text-muted mt-3">No shelves yet. Add your first one above!</p>
+  <p class="text-muted mt-3">No shelves yet. Add your first one above!</p>
   {% endif %}
 </div>
 {% endblock %}

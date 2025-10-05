@@ -1,0 +1,27 @@
+{% extends "boilerplate.html" %}
+
+{% block title %}Book Not Found{% endblock %}
+
+{% block content %}
+<div class="not-found-container" style="text-align: center; margin-top: 100px; padding: 20px;">
+    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486740.png" alt="Book Not Found" width="150" height="150">
+    <h2 style="margin-top: 20px; color: #555;">📚 Oops! We couldn’t find that book.</h2>
+    <p style="color: #777; font-size: 16px; max-width: 500px; margin: 10px auto;">
+        It looks like this book isn’t available in Google Books or may have been removed.
+        Try searching again with a different title, author, or ISBN.
+    </p>
+    <a href="/" style="
+        display: inline-block;
+        margin-top: 25px;
+        padding: 10px 25px;
+        background-color: #4A90E2;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: background 0.2s;
+    " onmouseover="this.style.backgroundColor='#357ABD'" onmouseout="this.style.backgroundColor='#4A90E2'">
+        🔍 Back to Search
+    </a>
+</div>
+{% endblock %}

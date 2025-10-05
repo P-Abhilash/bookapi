@@ -1,41 +1,41 @@
-{% extends "base.html" %}
+{% extends "boilerplate.html" %}
 {% block title %}Search Results{% endblock %}
 {% block content %}
 <h2 class="mb-4">Search Results for “{{ query }}”</h2>
 
 {% for book in books %}
-  {% set info = book.volumeInfo %}
-  <div class="card mb-3 shadow-sm">
-    <div class="row g-0">
-      <div class="col-md-2 p-2">
-        {% if info.imageLinks and info.imageLinks.thumbnail %}
-          <img src="{{ info.imageLinks.thumbnail }}" class="img-fluid rounded-start" alt="cover">
-        {% else %}
-          <div class="text-center bg-secondary text-white p-4">No Image</div>
+{% set info = book.volumeInfo %}
+<div class="card mb-3 shadow-sm">
+  <div class="row g-0">
+    <div class="col-md-2 p-2">
+      {% if info.imageLinks and info.imageLinks.thumbnail %}
+      <img src="{{ info.imageLinks.thumbnail }}" class="img-fluid rounded-start" alt="cover">
+      {% else %}
+      <div class="text-center bg-secondary text-white p-4">No Image</div>
+      {% endif %}
+    </div>
+    <div class="col-md-10">
+      <div class="card-body">
+        <h5 class="card-title">
+          <a href="/book/{{ book.id }}">{{ info.title }}</a>
+        </h5>
+        <p class="card-text text-muted">
+          {% if info.authors %}by {{ info.authors | join(', ') }}{% endif %}
+          {% if info.publishedDate %}
+          • {{ info.publishedDate }}
+          {% endif %}
+        </p>
+        {% if info.averageRating %}
+        <p>⭐ {{ info.averageRating }} ({{ info.ratingsCount or 0 }} ratings)</p>
         {% endif %}
-      </div>
-      <div class="col-md-10">
-        <div class="card-body">
-          <h5 class="card-title">
-            <a href="/book/{{ book.id }}">{{ info.title }}</a>
-          </h5>
-          <p class="card-text text-muted">
-            {% if info.authors %}by {{ info.authors | join(', ') }}{% endif %}
-            {% if info.publishedDate %}
-              • {{ info.publishedDate }}
-            {% endif %}
-          </p>
-          {% if info.averageRating %}
-            <p>⭐ {{ info.averageRating }} ({{ info.ratingsCount or 0 }} ratings)</p>
-          {% endif %}
-          {% if info.description %}
-            <p class="card-text">{{ info.description[:200] ~ ('...' if info.description|length > 200 else '') }}</p>
-          {% else %}
-            <p class="text-muted">No description available.</p>
-          {% endif %}
-        </div>
+        {% if info.description %}
+        <p class="card-text">{{ info.description[:200] ~ ('...' if info.description|length > 200 else '') }}</p>
+        {% else %}
+        <p class="text-muted">No description available.</p>
+        {% endif %}
       </div>
     </div>
   </div>
+</div>
 {% endfor %}
 {% endblock %}

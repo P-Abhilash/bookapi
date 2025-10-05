@@ -1,26 +1,88 @@
+/* === Global === */
 body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #f4f4f9;
-  }
-  nav {
-    margin-bottom: 20px;
-  }
-  nav a {
-    margin-right: 15px;
-    text-decoration: none;
-    color: #0077cc;
-  }
-  main {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
-  }
-  input, button {
-    margin-top: 10px;
-  }
-  .carousel-item img {
-    object-fit: contain;
-    max-height: 250px;
-  }
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: #f4f4f9;
+  background-repeat: no-repeat;
+  background-size: auto;
+}
+
+/* Navbar */
+.navbar-brand {
+  font-weight: bold;
+  color: antiquewhite !important;
+  font-size: 1.6rem;
+}
+
+.navbar {
+  background-color: #2b1c09;
+  padding: 0.75rem 1rem;
+}
+
+nav {
+  margin-bottom: 20px;
+}
+
+nav a {
+  margin-right: 15px;
+  text-decoration: none;
+  color: #0077cc;
+}
+
+/* Search Form */
+.search-form {
+  max-width: 500px;
+}
+
+.search-form .form-control,
+.search-form .form-select {
+  background-color: #f5f5f5;
+  color: #333;
+  border-radius: 0.375rem;
+}
+
+.search-form .form-control::placeholder {
+  color: #797878;
+}
+
+.search-form .btn-primary {
+  background-color: #8b5e3c;
+  border-color: #8b5e3c;
+}
+
+.search-form .btn-primary:hover {
+  background-color: #734b30;
+  border-color: #734b30;
+}
+
+/* Buttons */
+.btn-outline-primary,
+.btn-outline-secondary {
+  color: antiquewhite;
+  border-color: antiquewhite;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover {
+  background-color: antiquewhite;
+  color: #2b1c09;
+}
+
+input,
+button {
+  margin-top: 10px;
+}
+
+/* Carousel */
+.carousel-item img {
+  object-fit: contain;
+  max-height: 250px;
+}
+
+/* Main container */
+main {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}

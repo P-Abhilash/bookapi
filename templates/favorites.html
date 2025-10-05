@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "boilerplate.html" %}
 {% block title %}My Favorites{% endblock %}
 
 {% block content %}
@@ -6,37 +6,37 @@
   <h2>My Favorites</h2>
 
   {% if favorites %}
-    <div class="row row-cols-1 row-cols-md-2 g-4 mt-3">
-      {% for fav in favorites %}
-        <div class="col">
-          <div class="card h-100 shadow-sm">
-            <div class="row g-0">
-              <div class="col-md-4">
-                {% if fav.thumbnail %}
-                  <img src="{{ fav.thumbnail }}" class="img-fluid rounded-start" alt="cover">
-                {% else %}
-                  <div class="text-center bg-secondary text-white p-4">No Image</div>
-                {% endif %}
-              </div>
-              <div class="col-md-8">
-                <div class="card-body">
-                  <h5 class="card-title">
-                    <a href="/book/{{ fav.book_id }}">{{ fav.title }}</a>
-                  </h5>
-                  <p class="card-text text-muted">{{ fav.authors }}</p>
-                  <form method="post" action="/remove-favorite">
-                    <input type="hidden" name="book_id" value="{{ fav.book_id }}">
-                    <button type="submit" class="btn btn-sm btn-outline-warning">❌ Remove</button>
-                  </form>
-                </div>
-              </div>
+  <div class="row row-cols-1 row-cols-md-2 g-4 mt-3">
+    {% for fav in favorites %}
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="row g-0">
+          <div class="col-md-4">
+            {% if fav.thumbnail %}
+            <img src="{{ fav.thumbnail }}" class="img-fluid rounded-start" alt="cover">
+            {% else %}
+            <div class="text-center bg-secondary text-white p-4">No Image</div>
+            {% endif %}
+          </div>
+          <div class="col-md-8">
+            <div class="card-body">
+              <h5 class="card-title">
+                <a href="/book/{{ fav.book_id }}">{{ fav.title }}</a>
+              </h5>
+              <p class="card-text text-muted">{{ fav.authors }}</p>
+              <form method="post" action="/remove-favorite">
+                <input type="hidden" name="book_id" value="{{ fav.book_id }}">
+                <button type="submit" class="btn btn-sm btn-outline-warning">❌ Remove</button>
+              </form>
             </div>
           </div>
         </div>
-      {% endfor %}
+      </div>
     </div>
+    {% endfor %}
+  </div>
   {% else %}
-    <p class="text-muted mt-3">You haven’t added any favorites yet.</p>
+  <p class="text-muted mt-3">You haven’t added any favorites yet.</p>
   {% endif %}
 </div>
 {% endblock %}
