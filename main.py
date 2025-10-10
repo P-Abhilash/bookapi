@@ -11,6 +11,11 @@ import logging
 # Load .env so GOOGLE_APPLICATION_CREDENTIALS is available
 load_dotenv()
 
+if "SERVICE_ACCOUNT_JSON" in os.environ:
+    sa_path = "/tmp/service-account.json"
+    with open(sa_path, "w") as f:
+        f.write(os.environ["SERVICE_ACCOUNT_JSON"])
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = sa_path
 app = FastAPI()
 
 app.add_middleware(
