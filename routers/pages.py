@@ -13,6 +13,7 @@ API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="templates")
 
+
 @router.get("/", response_class=HTMLResponse)
 async def homepage(request: Request):
     user = request.session.get("user")
@@ -20,27 +21,40 @@ async def homepage(request: Request):
         return RedirectResponse(url="/login", status_code=302)
 
     user_email = user["email"]
-    filter_option = request.query_params.get("filter", "week")
+    filter_option = request.query_params.get("filter", "")
 
-    favorites = (
+    all_favorites = (
         supabase.table("favorites")
         .select("*")
         .eq("user_email", user_email)
-        .limit(5)
+        .order("created_at", desc=True)
         .execute()
-        .data or []
+        .data
+        or []
     )
-
+    favorites = all_favorites[:5]
     shelves = (
         supabase.table("shelves")
         .select("*")
         .eq("user_email", user_email)
         .limit(5)
         .execute()
-        .data or []
+        .data
+        or []
     )
 
-    search_history_raw = list(reversed(request.session.get(f"search_history_{user_email}", [])))
+    history_res = (
+        supabase.table("search_history")
+        .select("query")
+        .eq("user_email", user_email)
+        .order("created_at", desc=True)
+        .limit(10)
+        .execute()
+    )
+    search_history_raw = (
+        [h["query"] for h in history_res.data] if history_res.data else []
+    )
+
     search_history_display = []
     for item in search_history_raw:
         if item.startswith("inauthor:"):
@@ -54,16 +68,33 @@ async def homepage(request: Request):
         search_history_display.append(label)
     search_history_zipped = list(zip(search_history_raw, search_history_display))
 
-    viewed_books = request.session.get(f"viewed_books_{user_email}", [])
+    viewed_books = (
+        supabase.table("recently_viewed")
+        .select("book_id, title, thumbnail")
+        .eq("user_email", user_email)
+        .order("created_at", desc=True)
+        .limit(5)
+        .execute()
+        .data
+        or []
+    )
+
     seen_ids = set()
+    # Normalize keys so the template expects "id" instead of "book_id"
     filtered_books = []
     for book in viewed_books:
-        if book["id"] not in seen_ids:
-            seen_ids.add(book["id"])
-            filtered_books.append(book)
-    filtered_books = filtered_books[:5]
+        if book["book_id"] not in seen_ids:
+            seen_ids.add(book["book_id"])
+            filtered_books.append(
+                {
+                    "id": book["book_id"],
+                    "title": book["title"],
+                    "thumbnail": book.get("thumbnail", ""),
+                }
+            )
 
-    genres = [
+    # --- Build base genres ---
+    default_genres = [
         {"name": "Romance", "link": "Romance", "count": 0},
         {"name": "Mystery", "link": "Mystery", "count": 0},
         {"name": "Fantasy", "link": "Fantasy", "count": 0},
@@ -74,19 +105,51 @@ async def homepage(request: Request):
         {"name": "Western", "link": "Western", "count": 0},
     ]
 
-    genre_map = {g["name"]: g for g in genres}
-    for fav in favorites:
+    # start fresh, don't reuse default references
+    genres = []
+    genre_map = {}
+
+    # add defaults first
+    for g in default_genres:
+        genres.append(g)
+        genre_map[g["name"].lower()] = g
+
+    # --- Add user genres dynamically ---
+    for fav in all_favorites:
         if fav.get("categories"):
-            for c in fav["categories"].split(","):
-                c = c.strip()
-                if c in genre_map:
-                    genre_map[c]["count"] += 1
+            for raw_cat in fav["categories"].split(","):
+                c = raw_cat.strip()
+                if "/" in c:
+                    c = c.split("/", 1)[0].strip()
+                else:
+                    c = c.strip()
+
+                # skip empty or too short
+                if len(c) < 4:
+                    continue
+
+                # normalize capitalization
+                c = c.title()
+
+                key = c.lower()
+                if key in genre_map:
+                    genre_map[key]["count"] += 1
                 else:
                     genres.append({"name": c, "link": c, "count": 1})
-                    genre_map[c] = genres[-1]
+                    genre_map[key] = genres[-1]
 
-    genres = sorted(genres, key=lambda x: x["count"], reverse=True)[:20]
+    # --- Sort user-added genres above defaults ---
+    genres = sorted(
+        genres,
+        key=lambda x: (
+            x["count"],
+            x["name"] not in [d["name"] for d in default_genres],
+        ),
+        reverse=True,
+    )
 
+    # --- Finally limit to 16 ---
+    genres = genres[:16]
     search_terms = {
         "week": "trending books this week",
         "month": "bestsellers this month",
@@ -116,18 +179,21 @@ async def homepage(request: Request):
         except Exception as e:
             print("❌ Error fetching featured books:", e)
 
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "user": user,
-        "favorites": favorites,
-        "shelves": shelves,
-        "search_history_zipped": search_history_zipped,
-        "viewed_books": filtered_books,
-        "genres": genres,
-        "carousel_books": carousel_books,
-        "featured_books": featured_books,
-        "filter": filter_option,
-    })
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "user": user,
+            "favorites": favorites,
+            "shelves": shelves,
+            "search_history_zipped": search_history_zipped,
+            "viewed_books": filtered_books,
+            "genres": genres,
+            "carousel_books": carousel_books,
+            "featured_books": featured_books,
+            "filter": filter_option,
+        },
+    )
 
 
 # --- Clear Recently Viewed ---
@@ -136,7 +202,7 @@ async def clear_recently_viewed(request: Request):
     user_email = get_current_user_email(request)
     if not user_email:
         return RedirectResponse(url="/login")
-    request.session[f"viewed_books_{user_email}"] = []
+    supabase.table("recently_viewed").delete().eq("user_email", user_email).execute()
     return RedirectResponse(url="/", status_code=303)
 
 
@@ -146,5 +212,5 @@ async def clear_search_history(request: Request):
     user_email = get_current_user_email(request)
     if not user_email:
         return RedirectResponse(url="/login")
-    request.session[f"search_history_{user_email}"] = []
+    supabase.table("search_history").delete().eq("user_email", user_email).execute()
     return RedirectResponse(url="/", status_code=303)
