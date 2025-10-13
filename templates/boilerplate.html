@@ -3,39 +3,71 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /> <!-- ✅ Important -->
     <title>{% block title %}BookApp{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-tan shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">BookApp</a>
+            <a class="navbar-brand" href="/">📚 BookApp</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">Home</a>
+                    </li>
+                    {% if user %}
+                    <li class="nav-item"><a class="nav-link" href="/favorites">Favorites</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/shelves">My Shelves</a></li>
+                    {% endif %}
+                </ul>
 
-            {% if user %}
-            <form method="get" action="/search" class="search-form d-flex flex-wrap gap-2 align-items-center">
-                <select name="filter" class="form-select w-auto">
-                    <option value="">All</option>
-                    <option value="intitle" {% if filter=="intitle" %}selected{% endif %}>Title</option>
-                    <option value="inauthor" {% if filter=="inauthor" %}selected{% endif %}>Author</option>
-                    <option value="subject" {% if filter=="subject" %}selected{% endif %}>Category</option>
-                    <option value="inpublisher" {% if filter=="inpublisher" %}selected{% endif %}>Publisher</option>
-                    <option value="isbn" {% if filter=="isbn" %}selected{% endif %}>ISBN</option>
-                </select>
-                <input type="text" name="q" placeholder="Search books..." class="form-control w-auto" required>
-                <button class="btn btn-primary">Search</button>
-            </form>
-            {% endif %}
+                <!-- Search form moved outside of navbar-nav -->
+                <form method="get" action="/search"
+                    class="navbar-search-form d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2 my-2 my-lg-0 me-lg-3">
+                    <div class="d-flex flex-row flex-lg-row gap-2 align-items-center">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                {% if filter == "intitle" %}Title{% elif filter == "inauthor" %}Author{% elif filter
+                                == "subject" %}Category{% elif filter == "inpublisher" %}Publisher{% elif filter ==
+                                "isbn" %}ISBN{% else %}All{% endif %}
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                                <li><a class="dropdown-item" href="#" data-value="">All</a></li>
+                                <li><a class="dropdown-item" href="#" data-value="intitle">Title</a></li>
+                                <li><a class="dropdown-item" href="#" data-value="inauthor">Author</a></li>
+                                <li><a class="dropdown-item" href="#" data-value="subject">Category</a></li>
+                                <li><a class="dropdown-item" href="#" data-value="inpublisher">Publisher</a></li>
+                                <li><a class="dropdown-item" href="#" data-value="isbn">ISBN</a></li>
+                            </ul>
+                        </div>
+                        <input type="hidden" name="filter" id="filterInput" value="{{ filter or '' }}">
+                        <input type="search" name="q" class="form-control form-control-sm"
+                            style="max-width: 280px; min-width: 150px;" placeholder="Search books..."
+                            aria-label="Search" value="{{ query }}" required>
+                    </div>
+                    <button class="btn btn-success btn-sm w-auto w-100 d-lg-inline d-block" type="submit">
+                        Search
+                    </button>
+                </form>
 
-            <div class="d-flex align-items-center">
-                {% if user %}
-                <a href="/logout" class="btn btn-outline-secondary ms-2">
-                    Logout ({{ user.email if user is mapping else user }})
-                </a>
-                {% else %}
-                <a href="/login" class="btn btn-outline-primary">Login</a>
-                {% endif %}
+                <div class="d-flex align-items-center flex-column flex-lg-row gap-2 mt-2 mt-lg-0">
+                    {% if user %}
+                    <a href="/logout" class="btn btn-outline-success btn-sm w-100 w-lg-auto">
+                        Logout ({{ user.email if user is mapping else user }})
+                    </a>
+                    {% else %}
+                    <a href="/login" class="btn btn-outline-primary btn-sm w-100 w-lg-auto">Login</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>
@@ -53,3 +85,14 @@
 </body>
 
 </html>
+<script>
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', e => {
+            e.preventDefault();
+            const value = item.getAttribute('data-value');
+            const label = item.textContent;
+            document.getElementById('filterInput').value = value;
+            document.getElementById('filterDropdown').textContent = label;
+        });
+    });
+</script>
