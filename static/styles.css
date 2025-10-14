@@ -252,6 +252,11 @@ a:hover {
   background: #f6ead1;
   transition: all 0.2s ease;
   border: 1px solid #d4b68a;
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .genre-card:hover {
@@ -342,3 +347,27 @@ a:hover {
 .card-img-container:hover img {
   transform: scale(1.05);
 }
+/* === Light & Pastel Spotify-Style Genre Colors === */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(1)  .genre-card { background: linear-gradient(135deg, #ffd6a5, #fff3b0); } /* peach-yellow */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(2)  .genre-card { background: linear-gradient(135deg, #a0c4ff, #bdb2ff); } /* soft blue-lavender */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(3)  .genre-card { background: linear-gradient(135deg, #caffbf, #9bf6ff); } /* mint-aqua */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(4)  .genre-card { background: linear-gradient(135deg, #ffc6ff, #ffadad); } /* pink-peach */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(5)  .genre-card { background: linear-gradient(135deg, #fdffb6, #caffbf); } /* lemon-lime */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(6)  .genre-card { background: linear-gradient(135deg, #bde0fe, #ffc8dd); } /* baby blue-pink */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(7)  .genre-card { background: linear-gradient(135deg, #ffe5ec, #ffcad4); } /* pale rose */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(8)  .genre-card { background: linear-gradient(135deg, #d0f4de, #a9def9); } /* mint-sky */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(9)  .genre-card { background: linear-gradient(135deg, #fef6e4, #f9dcc4); } /* cream-tan */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(10) .genre-card { background: linear-gradient(135deg, #e4c1f9, #f694c1); } /* lilac-pink */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(11) .genre-card { background: linear-gradient(135deg, #c9e4de, #faf3dd); } /* sage-cream */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(12) .genre-card { background: linear-gradient(135deg, #f8edeb, #fcd5ce); } /* warm nude */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(13) .genre-card { background: linear-gradient(135deg, #d8e2dc, #ffe5d9); } /* dusty coral */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(14) .genre-card { background: linear-gradient(135deg, #f1f0ff, #dee2ff); } /* cool lilac */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(15) .genre-card { background: linear-gradient(135deg, #fff1e6, #fde2e4); } /* blush-cream */
+.row.row-cols-2.row-cols-md-4.row-cols-lg-5.g-3.mt-2 .col:nth-child(16) .genre-card {background: linear-gradient(135deg, #aee1f9, #fde2e4); /* soft sky to peach */}
+
+/* Hover effect */
+.genre-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+}
+

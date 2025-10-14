@@ -182,13 +182,13 @@
         </div>
 
         {% if genres %}
-        <div class="row row-cols-2 row-cols-md-4 g-3 mt-2">
+        <div class="row row-cols-2 row-cols-md-4 row-cols-lg-5 g-3 mt-2">
           {% for genre in genres %}
           <div class="col">
             <a href="/search?filter=subject&q='{{ genre.link | urlencode }}'" class="text-decoration-none">
               <div class="card h-100 text-center p-2 shadow-sm border-0 genre-card hover-shadow"
                 style="border-radius: 12px;">
-                <div class="mb-2 fw-semibold align-items-center">{{ genre.name }}</div>
+                <div class="m-2 fw-semibold align-items-center">{{ genre.name }}</div>
               </div>
             </a>
           </div>

@@ -148,8 +148,8 @@ async def homepage(request: Request):
         reverse=True,
     )
 
-    # --- Finally limit to 16 ---
-    genres = genres[:16]
+    # --- Finally limit to 15 ---
+    genres = genres[:15]
     search_terms = {
         "week": "trending books this week",
         "month": "bestsellers this month",
