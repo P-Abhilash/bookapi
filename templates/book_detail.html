@@ -75,8 +75,16 @@
       <br>
       {% endfor %}
       {% else %}
-      <p class="text-muted">No shelves yet. <a href="/shelves">Create one?</a></p>
+      <p class="text-muted">No shelves yet.</p>
       {% endif %}
+      <!-- Create New Shelf Button (opens modal) -->
+      <p class="mt-2">
+        <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal"
+          data-bs-target="#createShelfModal">
+          + Create New Shelf
+        </button>
+      </p>
+
       {% endif %}
 
 
@@ -94,4 +102,31 @@
     </div>
   </div>
 </div>
+<!-- Create Shelf Modal -->
+<div class="modal fade" id="createShelfModal" tabindex="-1" aria-labelledby="createShelfLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="/create-shelf">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createShelfLabel">Create a New Shelf</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="shelfName" class="form-label">Shelf Name</label>
+            <input type="text" name="name" id="shelfName" class="form-control"
+              placeholder="e.g. Favorites, Sci-Fi, To Read" required>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Shelf</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
