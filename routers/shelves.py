@@ -6,47 +6,12 @@ from fastapi.templating import Jinja2Templates
 from supabase_client import supabase
 from core.security import get_current_user_email
 import logging
+from fastapi import Body
 
 cloud_logger = logging.getLogger("bookshelf")
 
 router = APIRouter(tags=["shelves"])
 templates = Jinja2Templates(directory="templates")
-
-
-@router.post("/add-to-shelf")
-async def add_to_shelf(
-    request: Request,
-    shelf_id: int = Form(...),
-    book_id: str = Form(...),
-    title: str = Form(...),
-    authors: str = Form(...),
-    thumbnail: str = Form(...),
-):
-    user_email = get_current_user_email(request)
-    if not user_email:
-        return RedirectResponse(url="/login")
-
-    # Check if book already in shelf
-    existing = (
-        supabase.table("shelf_books")
-        .select("*")
-        .eq("shelf_id", shelf_id)
-        .eq("book_id", book_id)
-        .execute()
-    )
-
-    if not existing.data:
-        supabase.table("shelf_books").insert(
-            {
-                "shelf_id": shelf_id,
-                "book_id": book_id,
-                "title": title,
-                "authors": authors,
-                "thumbnail": thumbnail,
-            }
-        ).execute()
-
-    return RedirectResponse(url=f"/book/{book_id}", status_code=303)
 
 
 @router.post("/remove-from-shelf")
@@ -61,7 +26,7 @@ async def remove_from_shelf(
         "book_id", book_id
     ).execute()
 
-    return RedirectResponse(url=f"/book/{book_id}", status_code=303)
+    return RedirectResponse(url=f"/shelf/{shelf_id}", status_code=303)
 
 
 @router.get("/shelves", response_class=HTMLResponse)
@@ -152,3 +117,44 @@ async def view_shelf(shelf_id: int, request: Request):
             "books": books.data or [],
         },
     )
+
+
+@router.post("/shelf-json")
+async def toggle_shelf_json(request: Request, data: dict = Body(...)):
+    user_email = get_current_user_email(request)
+    if not user_email:
+        return {"success": False, "message": "Unauthorized"}
+
+    shelf_id = data.get("shelf_id")
+    book_id = data.get("book_id")
+    title = data.get("title")
+    authors = data.get("authors")
+    thumbnail = data.get("thumbnail")
+    in_shelf = data.get("in_shelf")
+
+    if in_shelf:
+        supabase.table("shelf_books").delete().eq("shelf_id", shelf_id).eq(
+            "book_id", book_id
+        ).execute()
+        cloud_logger.info(f"📕 removed {book_id} from shelf {shelf_id}")
+        return {"success": True, "action": "removed"}
+    else:
+        existing = (
+            supabase.table("shelf_books")
+            .select("*")
+            .eq("shelf_id", shelf_id)
+            .eq("book_id", book_id)
+            .execute()
+        )
+        if not existing.data:
+            supabase.table("shelf_books").insert(
+                {
+                    "shelf_id": shelf_id,
+                    "book_id": book_id,
+                    "title": title,
+                    "authors": authors,
+                    "thumbnail": thumbnail,
+                }
+            ).execute()
+        cloud_logger.info(f"📘 added {book_id} to shelf {shelf_id}")
+        return {"success": True, "action": "added"}

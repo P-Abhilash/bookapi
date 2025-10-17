@@ -13,20 +13,22 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">📚 BookApp</a>
+            {% if user %}
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
                         <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">Home</a>
                     </li>
-                    {% if user %}
+
                     <li class="nav-item"><a class="nav-link" href="/favorites">Favorites</a></li>
                     <li class="nav-item"><a class="nav-link" href="/shelves">My Shelves</a></li>
-                    {% endif %}
+
                 </ul>
 
                 <!-- Search form moved outside of navbar-nav -->
@@ -54,18 +56,18 @@
                             style="max-width: 280px; min-width: 150px;" placeholder="Search books..."
                             aria-label="Search" value="{{ query }}" required>
                     </div>
-                    <button class="btn btn-success btn-sm w-auto w-100 d-lg-inline d-block" type="submit">
+                    <button class="btn btn-success btn-sm" type="submit" style="max-width: 340px;">
                         Search
                     </button>
                 </form>
-
-                <div class="d-flex align-items-center flex-column flex-lg-row gap-2 mt-2 mt-lg-0">
+                {% endif %}
+                <div class="d-flex align-items-start flex-column flex-lg-row gap-2 mt-2 mt-lg-0">
                     {% if user %}
-                    <a href="/logout" class="btn btn-outline-success btn-sm w-100 w-lg-auto">
+                    <a href="/logout" class="btn btn-outline-success btn-sm w-lg-auto">
                         Logout ({{ user.email if user is mapping else user }})
                     </a>
                     {% else %}
-                    <a href="/login" class="btn btn-outline-primary btn-sm w-100 w-lg-auto">Login</a>
+                    <a href="/login" class="btn btn-outline-primary btn-sm w-lg-auto">Login</a>
                     {% endif %}
                 </div>
             </div>
@@ -79,9 +81,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- ✅ Chatbase Widget -->
+    {% if user %}
     <script>
         (function () { if (!window.chatbase || window.chatbase("getState") !== "initialized") { window.chatbase = (...arguments) => { if (!window.chatbase.q) { window.chatbase.q = [] } window.chatbase.q.push(arguments) }; window.chatbase = new Proxy(window.chatbase, { get(target, prop) { if (prop === "q") { return target.q } return (...args) => target(prop, ...args) } }) } const onLoad = function () { const script = document.createElement("script"); script.src = "https://www.chatbase.co/embed.min.js"; script.id = "wv57MmlgGCLB-JkKl56hT"; script.domain = "www.chatbase.co"; document.body.appendChild(script) }; if (document.readyState === "complete") { onLoad() } else { window.addEventListener("load", onLoad) } })();
     </script>
+    {% endif %}
 </body>
 
 </html>

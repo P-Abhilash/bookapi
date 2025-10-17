@@ -11,7 +11,7 @@
     <div class="col">
       <div class="card h-100 shadow-sm">
         <div class="row g-0">
-          <div class="col-md-4">
+          <div class="col-md-4 text-center">
             {% if fav.thumbnail %}
             <img src="{{ fav.thumbnail }}" class="img-fluid rounded-start" alt="cover">
             {% else %}
@@ -24,9 +24,11 @@
                 <a href="/book/{{ fav.book_id }}">{{ fav.title }}</a>
               </h5>
               <p class="card-text text-muted">{{ fav.authors }}</p>
-              <form method="post" action="/remove-favorite">
+              <form method="post" action="/remove-favorite" class="delete-fav-form" data-title="{{ fav.title }}">
                 <input type="hidden" name="book_id" value="{{ fav.book_id }}">
-                <button type="submit" class="btn btn-sm btn-outline-warning">❌ Remove</button>
+                <button type="submit" class="btn btn-sm btn-outline-warning">
+                  ❌ Remove
+                </button>
               </form>
             </div>
           </div>
@@ -39,4 +41,45 @@
   <p class="text-muted mt-3">You haven’t added any favorites yet.</p>
   {% endif %}
 </div>
+
+<!-- 🧠 Modal: Confirm removing favorite -->
+<div class="modal fade" id="confirmFavoriteDelete" tabindex="-1" aria-labelledby="confirmFavoriteDeleteLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="confirmFavoriteDeleteLabel">Remove from Favorites</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to remove <strong id="bookTitlePlaceholder"></strong> from your Favorites list?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-warning" id="confirmFavDeleteBtn">Yes, Remove</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let favFormToSubmit = null;
+  document.querySelectorAll('.delete-fav-form').forEach(form => {
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      favFormToSubmit = form;
+
+      // dynamically insert book title
+      const title = form.dataset.title;
+      document.getElementById('bookTitlePlaceholder').textContent = `"${title}"`;
+
+      const modal = new bootstrap.Modal(document.getElementById('confirmFavoriteDelete'));
+      modal.show();
+      document.getElementById('confirmFavDeleteBtn').onclick = () => {
+        modal.hide();
+        favFormToSubmit.submit();
+      };
+    });
+  });
+</script>
 {% endblock %}

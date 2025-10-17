@@ -10,6 +10,7 @@ from supabase_client import supabase
 from core.security import get_current_user_email
 import httpx
 import logging
+import urllib.parse
 
 cloud_logger = logging.getLogger("bookshelf")
 
@@ -20,6 +21,40 @@ templates = Jinja2Templates(directory="templates")
 
 GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes"
 API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
+
+
+# --- helper function ---
+async def fetch_other_links(isbn: str):
+    links = {}
+    async with httpx.AsyncClient() as client:
+        try:
+            # Open Library
+            ol = await client.get(
+                f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data",
+                timeout=5,
+            )
+            if ol.status_code == 200:
+                data = ol.json()
+                if f"ISBN:{isbn}" in data:
+                    links["Open Library"] = data[f"ISBN:{isbn}"].get("url")
+
+            # Apple Books
+            ab = await client.get(
+                f"https://itunes.apple.com/search?term={isbn}&entity=ebook&country=us",
+                timeout=5,
+            )
+            if ab.status_code == 200:
+                data = ab.json()
+                if data.get("resultCount", 0) > 0:
+                    links["Apple Books"] = data["results"][0].get("trackViewUrl")
+
+        except Exception as e:
+            print("Other link fetch error:", e)
+
+    # always include fallback searches
+    links["Amazon"] = f"https://www.amazon.com/s?k={isbn}"
+    links["Barnes & Noble"] = f"https://www.barnesandnoble.com/s/{isbn}"
+    return links
 
 
 @router.get("/search", response_class=HTMLResponse)
@@ -244,6 +279,17 @@ async def book_detail(book_id: str, request: Request):
             }
         ).execute()
 
+        # --- Extract ISBN for external sources ---
+    isbn = None
+    for ident in book_data.get("volumeInfo", {}).get("industryIdentifiers", []):
+        if ident["type"] == "ISBN_13":
+            isbn = ident["identifier"]
+            break
+        elif not isbn and ident["type"] == "ISBN_10":
+            isbn = ident["identifier"]
+
+    other_links = await fetch_other_links(isbn) if isbn else {}
+
     # --- Render ---
     return templates.TemplateResponse(
         "book_detail.html",
@@ -254,5 +300,6 @@ async def book_detail(book_id: str, request: Request):
             "is_favorite": is_favorite,
             "shelves": shelves,
             "shelf_books": shelf_books,
+            "other_links": other_links,  # ⬅️ new context
         },
     )

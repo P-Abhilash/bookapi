@@ -8,6 +8,8 @@ from fastapi.templating import Jinja2Templates
 from supabase_client import supabase
 from core.security import get_current_user_email
 import logging
+from fastapi import Body
+
 cloud_logger = logging.getLogger("bookshelf")
 
 
@@ -24,59 +26,16 @@ async def view_favorites(request: Request):
     if not user_email:
         return RedirectResponse(url="/login", status_code=302)
 
-    result = supabase.table("favorites").select("*").eq("user_email", user_email).execute()
+    result = (
+        supabase.table("favorites").select("*").eq("user_email", user_email).execute()
+    )
     favorites = result.data or []
 
-    return templates.TemplateResponse("favorites.html", {
-        "request": request,
-        "user": user_email,
-        "favorites": favorites
-    })
+    return templates.TemplateResponse(
+        "favorites.html",
+        {"request": request, "user": user_email, "favorites": favorites},
+    )
 
-
-@router.post("/add-favorite")
-async def add_favorite(
-    request: Request,
-    book_id: str = Form(...),
-    title: str = Form(...),
-    authors: str = Form(...),
-    thumbnail: str = Form(...)
-):
-    user_email = get_current_user_email(request)
-    if not user_email:
-        return RedirectResponse(url="/login", status_code=302)
-
-    # --- Fetch categories once from Google Books ---
-    categories = ""
-    try:
-        url = f"https://www.googleapis.com/books/v1/volumes/{book_id}?key={API_KEY}"
-        with urllib.request.urlopen(url) as response:
-            data = json.loads(response.read())
-            volume_info = data.get("volumeInfo", {})
-            cats = volume_info.get("categories", [])
-            if cats:
-                categories = ", ".join(cats)
-    except Exception as e:
-        print("⚠️ Could not fetch categories:", e)
-    cloud_logger.info(f"💖 {user_email} added '{title}' to favorites (Book ID: {book_id})") 
-    # --- Prevent duplicates ---
-    existing = supabase.table("favorites") \
-        .select("*") \
-        .eq("user_email", user_email) \
-        .eq("book_id", book_id) \
-        .execute()
-
-    if not existing.data:
-        supabase.table("favorites").insert({
-            "user_email": user_email,
-            "book_id": book_id,
-            "title": title,
-            "authors": authors,
-            "thumbnail": thumbnail,
-            "categories": categories
-        }).execute()
-
-    return RedirectResponse(url=f"/book/{book_id}", status_code=303)
 
 @router.post("/remove-favorite")
 async def remove_favorite(request: Request, book_id: str = Form(...)):
@@ -85,10 +44,87 @@ async def remove_favorite(request: Request, book_id: str = Form(...)):
     if not user_email:
         return RedirectResponse(url="/login", status_code=302)
     cloud_logger.info(f"💔 {user_email} removed book {book_id} from favorites")
-    supabase.table("favorites") \
-        .delete() \
-        .eq("user_email", user_email) \
-        .eq("book_id", book_id) \
-        .execute()
+    supabase.table("favorites").delete().eq("user_email", user_email).eq(
+        "book_id", book_id
+    ).execute()
 
-    return RedirectResponse(url=f"/book/{book_id}", status_code=303)
+    return RedirectResponse(url=f"/favorites", status_code=303)
+
+
+@router.post("/favorite-json")
+async def toggle_favorite_json(request: Request, data: dict = Body(...)):
+    user_email = get_current_user_email(request)
+    if not user_email:
+        return {"success": False, "message": "Unauthorized"}
+
+    book_id = data.get("book_id")
+    title = data.get("title")
+    authors = data.get("authors")
+    thumbnail = data.get("thumbnail")
+    is_favorite = data.get("is_favorite")
+
+    if is_favorite:
+        # 💔 Remove from favorites
+        supabase.table("favorites").delete().eq("user_email", user_email).eq(
+            "book_id", book_id
+        ).execute()
+        cloud_logger.info(f"💔 {user_email} removed {book_id} from favorites")
+        return {"success": True, "action": "removed"}
+
+    else:
+        # --- Try to get categories from cached book data ---
+        categories = ""
+        try:
+            cached = (
+                supabase.table("books_cache")
+                .select("data")
+                .eq("id", book_id)
+                .execute()
+                .data
+            )
+            if cached and "volumeInfo" in cached[0]["data"]:
+                cats = cached[0]["data"]["volumeInfo"].get("categories", [])
+                if cats:
+                    categories = ", ".join(cats)
+        except Exception as e:
+            print("⚠️ Cache lookup failed:", e)
+
+        # --- Fallback: fetch directly from Google Books if not cached ---
+        if not categories:
+            try:
+                import urllib.request
+
+                url = f"https://www.googleapis.com/books/v1/volumes/{book_id}?key={API_KEY}"
+                with urllib.request.urlopen(url) as response:
+                    data = json.loads(response.read())
+                    cats = data.get("volumeInfo", {}).get("categories", [])
+                    if cats:
+                        categories = ", ".join(cats)
+            except Exception as e:
+                print("⚠️ Could not fetch categories:", e)
+
+        # --- Save favorite with categories ---
+        existing = (
+            supabase.table("favorites")
+            .select("*")
+            .eq("user_email", user_email)
+            .eq("book_id", book_id)
+            .execute()
+        )
+
+        if not existing.data:
+            supabase.table("favorites").insert(
+                {
+                    "user_email": user_email,
+                    "book_id": book_id,
+                    "title": title,
+                    "authors": authors,
+                    "thumbnail": thumbnail,
+                    "categories": categories,
+                }
+            ).execute()
+
+        cloud_logger.info(
+            f"💖 {user_email} added '{title}' with categories: {categories}"
+        )
+        return {"success": True, "action": "added"}

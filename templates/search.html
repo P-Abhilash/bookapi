@@ -7,7 +7,7 @@
 {% set info = book.volumeInfo %}
 <div class="card mb-3 shadow-sm">
   <div class="row g-0">
-    <div class="col-md-2 p-2">
+    <div class="col-md-2 p-2 text-center">
       {% if info.imageLinks and info.imageLinks.thumbnail %}
       <img src="{{ info.imageLinks.thumbnail }}" class="img-fluid rounded-start" alt="cover">
       {% else %}

@@ -2,107 +2,130 @@
 {% block title %}{{ book.volumeInfo.title }}{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="row">
-    <div class="col-md-4">
-      {% if book.volumeInfo.imageLinks and book.volumeInfo.imageLinks.thumbnail %}
-      <img src="{{ book.volumeInfo.imageLinks.thumbnail }}" class="img-fluid" alt="Book cover">
-      {% endif %}
+<div class="container py-4 book-detail-page">
+  <div class="book-layout">
 
-      <p class="mt-3"><strong>Author:</strong> {{ book.volumeInfo.authors | join(', ') }}</p>
+    <!-- === LEFT COLUMN (Desktop) / ALL STACKED (Mobile) === -->
+    <div class="book-sidebar">
+      <!-- 📘 Thumbnail -->
+      <!-- 📘 Thumbnail -->
+      <div class="text-center mb-3">
+        {% if book.volumeInfo.imageLinks and book.volumeInfo.imageLinks.thumbnail %}
+        <img src="{{ book.volumeInfo.imageLinks.thumbnail }}" class="img-fluid mx-auto d-block" alt="Book cover">
+        {% endif %}
+      </div>
 
-      {% if book.volumeInfo.averageRating %}
-      <p><strong>Rating:</strong> ⭐ {{ book.volumeInfo.averageRating }} ({{ book.volumeInfo.ratingsCount or 0 }}
-        ratings)</p>
-      {% endif %}
+      <!-- 📄 Basic Book Info -->
+      <div class="book-meta mt-3">
+        <h2 class="book-title-mobile d-lg-none">{{ book.volumeInfo.title }}</h2>
+        {% if book.volumeInfo.authors %}
+        <p><strong>Author:</strong> {{ book.volumeInfo.authors | join(', ') }}</p>
+        {% endif %}
+        {% if book.volumeInfo.publishedDate %}
+        <p><strong>Published:</strong> {{ book.volumeInfo.publishedDate }}</p>
+        {% endif %}
+        {% if book.volumeInfo.categories %}
+        <p><strong>Categories:</strong> {{ book.volumeInfo.categories | join(', ') }}</p>
+        {% endif %}
+        {% if book.volumeInfo.language %}
+        <p><strong>Language:</strong> {{ book.volumeInfo.language | upper }}</p>
+        {% endif %}
+      </div>
 
-      {% if book.volumeInfo.publishedDate %}
-      {% set pub = book.volumeInfo.publishedDate %}
-      {% set parts = pub.split('-') %}
-      {% if parts|length == 3 %}
-      {% set months =
-      ['January','February','March','April','May','June','July','August','September','October','November','December'] %}
-      {% set month_index = parts[1]|int - 1 %}
-      {% set formatted = parts[2] ~ '-' ~ months[month_index] ~ '-' ~ parts[0] %}
-      {% else %}
-      {% set formatted = pub %}
-      {% endif %}
-      <p><strong>Published:</strong> {{ formatted }}</p>
-      {% endif %}
+      <!-- 📖 Description -->
+      <div class="book-description-mobile d-lg-none mt-3">
+        <h5>Description</h5>
+        <p>{{ book.volumeInfo.description | safe }}</p>
+      </div>
 
-      {% if book.volumeInfo.categories %}
-      <p><strong>Categories:</strong> {{ book.volumeInfo.categories | join(', ') }}</p>
-      {% endif %}
-
-      {% if book.volumeInfo.language %}
-      <p><strong>Language:</strong> {{ book.volumeInfo.language | upper }}</p>
-      {% endif %}
-
-      <form method="post" action="{{ '/remove-favorite' if is_favorite else '/add-favorite' }}">
-        <input type="hidden" name="book_id" value="{{ book.id }}">
-        <input type="hidden" name="title" value="{{ book.volumeInfo.title }}">
-        <input type="hidden" name="authors" value="{{ book.volumeInfo.authors | join(', ') }}">
-        <input type="hidden" name="thumbnail"
-          value="{{ book.volumeInfo.imageLinks.thumbnail if book.volumeInfo.imageLinks is defined }}">
-        <button type="submit" class="btn btn-{{ 'danger' if is_favorite else 'primary' }}">
+      <!-- ❤️ Favorite (AJAX) -->
+      <div class="book-favorite">
+        <button id="favoriteBtn" class="btn btn-{{ 'danger' if is_favorite else 'primary' }} w-auto mt-2"
+          data-bookid="{{ book.id }}" data-title="{{ book.volumeInfo.title }}"
+          data-authors="{{ book.volumeInfo.authors | join(', ') }}"
+          data-thumbnail="{{ book.volumeInfo.imageLinks.thumbnail if book.volumeInfo.imageLinks }}"
+          data-favorite="{{ 'true' if is_favorite else 'false' }}">
           {{ '❤️ Remove from Favorites' if is_favorite else 'Add to Favorites ❤️' }}
         </button>
-      </form>
+      </div>
 
 
+      <!-- 📁 Shelves -->
       {% if user %}
       <hr>
       <h5>Add this book to a shelf:</h5>
-      {% if shelves %}
-      {% for shelf in shelves %}
-      {% if shelf.id in shelf_books %}
-      <form method="post" action="/remove-from-shelf" class="d-inline">
-        <input type="hidden" name="shelf_id" value="{{ shelf.id }}">
-        <input type="hidden" name="book_id" value="{{ book.id }}">
-        <button type="submit" class="btn btn-sm btn-warning mb-1">Remove from "{{ shelf.name }}"</button>
-      </form>
-      {% else %}
-      <form method="post" action="/add-to-shelf" class="d-inline">
-        <input type="hidden" name="shelf_id" value="{{ shelf.id }}">
-        <input type="hidden" name="book_id" value="{{ book.id }}">
-        <input type="hidden" name="title" value="{{ book.volumeInfo.title }}">
-        <input type="hidden" name="authors" value="{{ book.volumeInfo.authors | join(', ') }}">
-        <input type="hidden" name="thumbnail"
-          value="{{ book.volumeInfo.imageLinks.thumbnail if book.volumeInfo.imageLinks }}">
-        <button type="submit" class="btn btn-sm btn-success text-white mb-1">+ "{{ shelf.name }}"</button>
-      </form>
-      {% endif %}
-      <br>
-      {% endfor %}
-      {% else %}
-      <p class="text-muted">No shelves yet.</p>
-      {% endif %}
-      <!-- Create New Shelf Button (opens modal) -->
-      <p class="mt-2">
-        <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal"
+      <div class="book-shelves">
+        {% if shelves %}
+        {% for shelf in shelves %}
+        {% set in_shelf = shelf.id in shelf_books %}
+        <button class="btn btn-sm w-auto mb-1 shelf-btn
+                 {{ 'btn-warning' if in_shelf else 'btn-success text-white' }}" data-shelfid="{{ shelf.id }}"
+          data-bookid="{{ book.id }}" data-title="{{ book.volumeInfo.title }}"
+          data-authors="{{ book.volumeInfo.authors | join(', ') }}"
+          data-thumbnail="{{ book.volumeInfo.imageLinks.thumbnail if book.volumeInfo.imageLinks }}"
+          data-shelfname="{{ shelf.name }}" data-inshelf="{{ 'true' if in_shelf else 'false' }}">
+          {{ 'Remove from "' ~ shelf.name ~ '"' if in_shelf else '+ "' ~ shelf.name ~ '"' }}
+        </button>
+        {% endfor %}
+        {% else %}
+        <p class="text-muted">No shelves yet.</p>
+        {% endif %}
+        <button type="button" class="btn btn-outline-dark btn-sm w-auto mt-2" data-bs-toggle="modal"
           data-bs-target="#createShelfModal">
           + Create New Shelf
         </button>
-      </p>
-
+      </div>
       {% endif %}
 
-
-
-      {% if book.volumeInfo.previewLink %}
-      <a href="{{ book.volumeInfo.previewLink }}" target="_blank" class="btn btn-primary mt-2">
-        📖 Open in Google Books
-      </a>
+      <!-- 🛒 Where to Read or Buy -->
+      {% if book.saleInfo or book.accessInfo %}
+      <hr>
+      <h5>📖 Where to Read or Buy</h5>
+      <div class="buy-read-section">
+        {% if book.saleInfo.isEbook %}
+        <p><strong>Available as eBook</strong></p>
+        {% endif %}
+        {% if book.saleInfo.retailPrice %}
+        <p>💲 <strong>{{ book.saleInfo.retailPrice.amount }} {{ book.saleInfo.retailPrice.currencyCode }}</strong></p>
+        {% endif %}
+        {% if book.saleInfo.buyLink %}
+        <a href="{{ book.saleInfo.buyLink }}" target="_blank" class="btn btn-success mb-2 w-auto">
+          🛒 Buy on Google Play
+        </a>
+        {% endif %}
+        {% if book.accessInfo.webReaderLink %}
+        <a href="{{ book.accessInfo.webReaderLink }}" target="_blank" class="btn btn-outline-primary mb-2 w-auto">
+          📚 Read Online
+        </a>
+        {% endif %}
+        {% if not book.saleInfo.buyLink and not book.accessInfo.webReaderLink %}
+        <p class="text-muted">No purchase or online reading links available.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+      <!-- 🛍️ Other Stores -->
+      {% if other_links %}
+      <hr>
+      <h5>🛍️ Also Available On</h5>
+      <div class="buy-read-section">
+        {% for name, url in other_links.items() %}
+        <a href="{{ url }}" target="_blank" class="btn btn-outline-secondary mb-2 w-auto">
+          {{ name }}
+        </a>
+        {% endfor %}
+      </div>
       {% endif %}
     </div>
 
-    <div class="col-md-8">
+    <!-- === RIGHT COLUMN (Desktop Description) === -->
+    <div class="book-description d-none d-lg-block">
       <h2>{{ book.volumeInfo.title }}</h2>
       <p>{{ book.volumeInfo.description | safe }}</p>
     </div>
   </div>
 </div>
-<!-- Create Shelf Modal -->
+
+<!-- 📚 Create Shelf Modal -->
 <div class="modal fade" id="createShelfModal" tabindex="-1" aria-labelledby="createShelfLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -111,7 +134,6 @@
           <h5 class="modal-title" id="createShelfLabel">Create a New Shelf</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-
         <div class="modal-body">
           <div class="mb-3">
             <label for="shelfName" class="form-label">Shelf Name</label>
@@ -119,7 +141,6 @@
               placeholder="e.g. Favorites, Sci-Fi, To Read" required>
           </div>
         </div>
-
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary">Create Shelf</button>
@@ -128,5 +149,104 @@
     </div>
   </div>
 </div>
+
+<!-- ✅ Toast Notification using Bootstrap positioning -->
+<div class="toast-container position-fixed top-0 end-0 p-3 mt-5" style="z-index: 1100;">
+  <div id="actionToast" class="toast align-items-center text-bg-dark border-0" role="alert" aria-live="assertive"
+    aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastText">Action completed</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+        aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // === Toast helper ===
+    const toastEl = document.getElementById("actionToast");
+    const toastBody = document.getElementById("toastText");
+    const toast = new bootstrap.Toast(toastEl, { delay: 2200 });
+
+    function showToast(msg, color = "dark") {
+      toastEl.className = `toast align-items-center text-bg-${color} border-0`;
+      toastBody.textContent = msg;
+      toast.show();
+    }
+
+    // === Favorites toggle ===
+    const favBtn = document.getElementById("favoriteBtn");
+    if (favBtn) {
+      favBtn.addEventListener("click", async () => {
+        favBtn.disabled = true;
+        const isFav = favBtn.dataset.favorite === "true";
+        const payload = {
+          book_id: favBtn.dataset.bookid,
+          title: favBtn.dataset.title,
+          authors: favBtn.dataset.authors,
+          thumbnail: favBtn.dataset.thumbnail,
+          is_favorite: isFav
+        };
+        const res = await fetch("/favorite-json", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        favBtn.disabled = false;
+
+        if (data.success) {
+          favBtn.dataset.favorite = (!isFav).toString();
+          favBtn.textContent = isFav ? "Add to Favorites ❤️" : "❤️ Remove from Favorites";
+          favBtn.classList.toggle("btn-danger");
+          favBtn.classList.toggle("btn-primary");
+          showToast(isFav ? "💔 Removed from Favorites" : "💖 Added to Favorites",
+            isFav ? "secondary" : "success");
+        } else {
+          showToast("⚠️ Please log in", "danger");
+        }
+      });
+    }
+
+    // === Shelf toggle ===
+    document.querySelectorAll(".shelf-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        const inShelf = btn.dataset.inshelf === "true";
+        const payload = {
+          shelf_id: btn.dataset.shelfid,
+          book_id: btn.dataset.bookid,
+          title: btn.dataset.title,
+          authors: btn.dataset.authors,
+          thumbnail: btn.dataset.thumbnail,
+          in_shelf: inShelf
+        };
+        const res = await fetch("/shelf-json", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        btn.disabled = false;
+
+        if (data.success) {
+          btn.dataset.inshelf = (!inShelf).toString();
+          btn.classList.toggle("btn-success");
+          btn.classList.toggle("btn-warning");
+          btn.textContent = inShelf
+            ? `+ "${btn.dataset.shelfname}"`
+            : `Remove from "${btn.dataset.shelfname}"`;
+          showToast(inShelf
+            ? `📕 Removed from ${btn.dataset.shelfname}`
+            : `📘 Added to ${btn.dataset.shelfname}`,
+            inShelf ? "secondary" : "success");
+        } else {
+          showToast("⚠️ Unable to update shelf", "danger");
+        }
+      });
+    });
+  });
+</script>
 
 {% endblock %}

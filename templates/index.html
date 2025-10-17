@@ -28,7 +28,7 @@
           <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4 p-4 text-center">
             {% if info.imageLinks and info.imageLinks.thumbnail %}
             <img src="{{ info.imageLinks.thumbnail }}" alt="{{ info.title }}" class="rounded shadow"
-              style="max-height: 250px;">
+              style="max-height: 200px;">
             {% else %}
             <div class="bg-secondary text-white d-flex align-items-center justify-content-center"
               style="width:150px; height:200px;">No Image</div>
@@ -201,54 +201,53 @@
     </div>
   </div>
   <!-- 📚 Featured Section -->
-  <div class="mb-5">
-    <h5 class="mb-3 mt-3" style="color: #0a0702;">Featured Books</h5>
-    <div class="featured-books-container">
-      <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-3">
-        {% for book in featured_books %}
-        {% set info = book.volumeInfo %}
-        <div class="col mb-3">
-          <div class="card shadow-sm position-relative h-100">
+  <div class="featured-books mt-4">
+    <h5 class="mb-3" style="color: #0a0702;">Featured Books</h5>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-3">
 
-            <!-- ✅ Image is clickable -->
-            <a class="card-img-container d-block" href="/book/{{ book.id }}">
-              {% if info.imageLinks and info.imageLinks.thumbnail %}
-              <img src="{{ info.imageLinks.thumbnail }}" class="card-img-top" alt="{{ info.title }}">
-              {% else %}
-              <div class="bg-secondary text-white d-flex align-items-center justify-content-center w-100 h-100 small">
-                No Image
-              </div>
-              {% endif %}
-            </a>
+      {% for book in featured_books %}
+      {% set info = book.volumeInfo %}
+      <div class="col mb-4">
+        <div class="card shadow-sm h-100">
 
-            <!-- Card body -->
-            <div class="card-body d-flex flex-column p-2">
-              <h6 class="card-title">
-                {% if info.title %}
-                {% set truncated_title = info.title[:40] + ("..." if info.title|length > 40 else "") %}
+          <!-- 📘 Image (old style, perfect proportions) -->
+          {% if info.imageLinks and info.imageLinks.thumbnail %}
+          <img src="{{ info.imageLinks.thumbnail }}" alt="{{ info.title }}" class="card-img-top img-fluid"
+            style="height: 150px; object-fit: contain; background-color: #fff;">
+          {% else %}
+          <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+            No Image
+          </div>
+          {% endif %}
+
+          <!-- 📖 Card Body -->
+          <div class="card-body d-flex flex-column p-2">
+            <h6 class="card-title mb-1">
+              {% if info.title %}
+              {% set truncated_title = info.title[:60] + ("..." if info.title|length > 60 else "") %}
+              <a href="/book/{{ book.id }}" class="text-decoration-none fw-semibold">
                 {{ truncated_title }}
-                {% else %}
-                Untitled
-                {% endif %}
-              </h6>
-
-              {% if info.authors %}
-              {% set author_string = info.authors | join(', ') %}
-              {% set truncated_author = author_string[:40] + ("..." if author_string|length > 30 else "") %}
-              <p class="card-text text-muted small">by {{ truncated_author }}</p>
+              </a>
               {% else %}
-              <p class="card-text text-muted small">Author unknown</p>
+              <a href="/book/{{ book.id }}" class="text-decoration-none fw-semibold">Untitled</a>
               {% endif %}
-            </div>
+            </h6>
 
+            {% if info.authors %}
+            {% set author_string = info.authors | join(', ') %}
+            {% set truncated_author = author_string[:40] + ("..." if author_string|length > 40 else "") %}
+            <p class="card-text text-muted small mb-0">by {{ truncated_author }}</p>
+            {% else %}
+            <p class="card-text text-muted small mb-0">Author unknown</p>
+            {% endif %}
           </div>
         </div>
-        {% endfor %}
       </div>
+      {% endfor %}
     </div>
   </div>
+
 </div>
-{% endblock %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.toggle-link').forEach(link => {
@@ -261,3 +260,4 @@
     });
   });
 </script>
+{% endblock %}
