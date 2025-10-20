@@ -8,6 +8,7 @@ from core.security import get_current_user_email
 import urllib.parse
 import os
 import httpx
+import asyncio
 
 API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 router = APIRouter(tags=["pages"])
@@ -147,16 +148,19 @@ async def homepage(request: Request):
         ),
         reverse=True,
     )
-
-    # --- Finally limit to 15 ---
     genres = genres[:15]
+
+    #  carousel_books
     search_terms = {
         "week": "trending books this week",
         "month": "bestsellers this month",
-        "top": "top rated books",
+        "top": "top rated books in 2025",
         "new": "new book releases",
     }
-    selected_query = search_terms.get(filter_option, "trending books")
+
+    # ✅ Default to "new arrivals" if no filter specified
+    filter_option = filter_option or "new"
+    selected_query = search_terms.get(filter_option, "new book releases")
 
     carousel_books, featured_books = [], []
     async with httpx.AsyncClient() as client:
@@ -169,15 +173,55 @@ async def homepage(request: Request):
         except Exception as e:
             print("Error fetching carousel books:", e)
 
+        # --- Personalized Featured Books (category search, parallel async fetch, cached per session) ---
+        featured_books = []
         try:
-            feature_query = "best books of 2024"
-            url_feat = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(feature_query)}&maxResults=10&key={API_KEY}"
-            response_feat = await client.get(url_feat, timeout=10.0)
-            if response_feat.status_code == 200:
-                data_feat = response_feat.json()
-                featured_books = data_feat.get("items", [])
+            if request.session.get("featured_books"):
+                # ✅ Use cached featured list for this login/session
+                featured_books = request.session["featured_books"]
+                print("✅ Using cached featured books for this session.")
+            else:
+                # Reuse already calculated top genres
+                top_genres = [g["name"] for g in genres[:3] if g["name"]]
+
+                # Fallback if user has no favorites at all
+                if not top_genres:
+                    top_genres = ["Fiction", "Romance", "Mystery"]
+
+                async def fetch_books_for_genre(client, genre):
+                    """Fetch books for a specific genre via category search."""
+                    try:
+                        feature_query = f"subject:{genre}"
+                        url_feat = (
+                            f"https://www.googleapis.com/books/v1/volumes?"
+                            f"q={urllib.parse.quote(feature_query)}&maxResults=4&orderBy=relevance&key={API_KEY}"
+                        )
+                        print(f"📚 Fetching featured for genre: {genre}")
+                        resp = await client.get(url_feat, timeout=10.0)
+                        if resp.status_code == 200:
+                            return resp.json().get("items", [])
+                    except Exception as e:
+                        print(f"❌ Error fetching {genre}: {e}")
+                    return []
+
+                async with httpx.AsyncClient() as client:
+                    # Run all genre requests in parallel
+                    tasks = [fetch_books_for_genre(client, g) for g in top_genres]
+                    results = await asyncio.gather(*tasks)
+
+                # Combine results from all genres
+                for r in results:
+                    if r:
+                        featured_books.extend(r)
+
+                # ✅ Cache in session for this login
+                request.session["featured_books"] = featured_books
+                print(
+                    f"🧠 Cached featured books ({len(featured_books)} total) for this session."
+                )
+
         except Exception as e:
-            print("❌ Error fetching featured books:", e)
+            print("❌ Error fetching personalized featured books:", e)
 
     return templates.TemplateResponse(
         "index.html",
@@ -214,3 +258,33 @@ async def clear_search_history(request: Request):
         return RedirectResponse(url="/login")
     supabase.table("search_history").delete().eq("user_email", user_email).execute()
     return RedirectResponse(url="/", status_code=303)
+
+
+# --- API endpoint for AJAX updates (no full reload) ---
+@router.get("/api/books")
+async def api_books(filter: str = ""):
+    """
+    Returns JSON data for carousel and featured books based on selected filter.
+    Used by frontend AJAX (no full page reload).
+    """
+    search_terms = {
+        "week": "trending books this week",
+        "month": "bestsellers this month",
+        "top": "top rated books",
+        "new": "new book releases",
+    }
+
+    # ✅ Default to "new arrivals" if no filter specified
+    filter_option = filter or "new"
+    selected_query = search_terms.get(filter_option, "new book releases")
+
+    carousel_books = []
+    async with httpx.AsyncClient() as client:
+        try:
+            url = f"https://www.googleapis.com/books/v1/volumes?q={urllib.parse.quote(selected_query)}&maxResults=10&key={API_KEY}"
+            response = await client.get(url, timeout=10.0)
+            if response.status_code == 200:
+                carousel_books = response.json().get("items", [])
+        except Exception as e:
+            print("❌ Error fetching carousel books:", e)
+    return {"carousel_books": carousel_books}

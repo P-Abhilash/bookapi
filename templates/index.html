@@ -5,17 +5,21 @@
 
 <div class="container py-4">
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-    <h2 class="dashboard-header mb-2 mb-md-0">Welcome, {{ user.email }}!</h2>
+    <h2 class="dashboard-header mb-2 mb-md-0">
+      Welcome, {{ user.username or user.email }}!
+    </h2>
 
-    <form method="get" action="/" class="d-flex align-items-center gap-2 flex-wrap">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
       <label for="filter" class="fw-semibold text-muted small mb-0">Sort by:</label>
-      <select name="filter" id="filter" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+      <select id="filter" class="form-select form-select-sm w-auto">
+        <option value="new" {% if filter=="new" %}selected{% endif %}>New arrivals</option>
         <option value="week" {% if filter=="week" %}selected{% endif %}>Popular this week</option>
         <option value="month" {% if filter=="month" %}selected{% endif %}>Popular this month</option>
-        <option value="top" {% if filter=="top" %}selected{% endif %}>Top rated</option>
-        <option value="new" {% if filter=="new" %}selected{% endif %}>New arrivals</option>
+        <option value="top" {% if filter=="top" %}selected{% endif %}>Top rated 2025</option>
       </select>
-    </form>
+
+    </div>
+
   </div>
 
   {% if carousel_books %}
@@ -202,7 +206,7 @@
   </div>
   <!-- 📚 Featured Section -->
   <div class="featured-books mt-4">
-    <h5 class="mb-3" style="color: #0a0702;">Featured Books</h5>
+    <h5 class="mb-3" style="color: #0a0702;">Featured Books for You</h5>
     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 row-cols-xxl-6 g-3">
 
       {% for book in featured_books %}
@@ -260,4 +264,88 @@
     });
   });
 </script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const filterSelect = document.getElementById('filter');
+    const carouselContainer = document.querySelector('#bookCarousel .carousel-inner');
+    const featuredContainer = document.querySelector('.featured-books .row');
+
+    // Create loader element
+    const loader = document.createElement('div');
+    loader.innerHTML = `
+    <div id="loading-spinner" 
+         style="display:flex;align-items:center;justify-content:center;height:200px;">
+      <div class="spinner-border text-secondary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>`;
+
+    filterSelect.addEventListener('change', async () => {
+      const filterValue = filterSelect.value;
+
+      // Add fade-out + show loader for carousel only
+      carouselContainer.style.opacity = "0.3";
+      carouselContainer.innerHTML = loader.innerHTML;
+
+      try {
+        const response = await fetch(`/api/books?filter=${filterValue}`);
+        const data = await response.json();
+
+        // Clear old content and fade in
+        carouselContainer.innerHTML = '';
+        carouselContainer.style.opacity = "1";
+
+        // --- 🌀 Update Carousel ---
+        data.carousel_books.forEach((book, index) => {
+          const info = book.volumeInfo || {};
+          let title = info.title || 'Untitled';
+          let authors = info.authors ? info.authors.join(', ') : 'Unknown';
+          const thumb = info.imageLinks?.thumbnail || '';
+
+          if (title.length > 60) title = title.slice(0, 60) + '...';
+          if (authors.length > 40) authors = authors.slice(0, 40) + '...';
+
+          carouselContainer.innerHTML += `
+        <div class="carousel-item ${index === 0 ? 'active' : ''}">
+          <a href="/book/${book.id}" class="text-decoration-none text-dark">
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4 p-4 text-center fade-in">
+              ${thumb ? `<img src="${thumb}" alt="${title}" class="rounded shadow" style="max-height:200px;">`
+              : `<div class="bg-secondary text-white d-flex align-items-center justify-content-center"
+                             style="width:150px;height:200px;">No Image</div>`}
+              <div class="textbook mt-3 mt-md-0">
+                <h5 class="fw-bold mb-1">${title}</h5>
+                <p class="mb-1">by ${authors}</p>
+                <small>Click to view details</small>
+              </div>
+            </div>
+          </a>
+        </div>`;
+        });
+
+      } catch (err) {
+        console.error("❌ Error loading carousel:", err);
+        carouselContainer.innerHTML = `<p class="text-danger text-center mt-4">Error loading books. Please try again.</p>`;
+      }
+    });
+  });
+</script>
+
+<style>
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
 {% endblock %}

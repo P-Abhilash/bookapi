@@ -8,6 +8,9 @@ content %}
   <div class="alert alert-success">{{ success }}</div>
   {% endif %}
   <form method="post" action="/signup">
+    <input type="text" name="username" class="form-control mb-2" placeholder="Username" required maxlength="20"
+      minlength="3" />
+    <small class="text-muted">Username must be 3–20 characters.</small>
     <input type="email" name="email" class="form-control mb-2" placeholder="Email" required />
     <input type="password" name="password" class="form-control mb-3" placeholder="Password" required />
     <button type="submit" class="btn btn-success w-100" style="background: #4c2c02">

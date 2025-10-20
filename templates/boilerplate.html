@@ -64,7 +64,7 @@
                 <div class="d-flex align-items-start flex-column flex-lg-row gap-2 mt-2 mt-lg-0">
                     {% if user %}
                     <a href="/logout" class="btn btn-outline-success btn-sm w-lg-auto">
-                        Logout ({{ user.email if user is mapping else user }})
+                        Logout ({{ user.username or user.email if user is mapping else user }})
                     </a>
                     {% else %}
                     <a href="/login" class="btn btn-outline-primary btn-sm w-lg-auto">Login</a>
