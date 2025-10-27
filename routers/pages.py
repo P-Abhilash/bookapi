@@ -9,6 +9,13 @@ import urllib.parse
 import os
 import httpx
 import asyncio
+from time import time
+from datetime import datetime, timezone
+
+featured_cache = (
+    {}
+)  # { user_email: { "data": [...], "genres": [...], "timestamp": <unix_time> } }
+
 
 API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 router = APIRouter(tags=["pages"])
@@ -173,53 +180,96 @@ async def homepage(request: Request):
         except Exception as e:
             print("Error fetching carousel books:", e)
 
-        # --- Personalized Featured Books (category search, parallel async fetch, cached per session) ---
+        # --- Personalized Featured Books (Supabase + memory cache) ---
         featured_books = []
         try:
-            if request.session.get("featured_books"):
-                # ✅ Use cached featured list for this login/session
-                featured_books = request.session["featured_books"]
-                print("✅ Using cached featured books for this session.")
+            top_genres = [g["name"] for g in genres[:3] if g["name"]] or [
+                "Fiction",
+                "Romance",
+                "Mystery",
+            ]
+            user_email = user["email"]
+
+            cache_entry = featured_cache.get(user_email)
+            cache_valid = (
+                cache_entry
+                and cache_entry["genres"] == top_genres
+                and time() - cache_entry["timestamp"] < 6 * 60 * 60  # 6 hours
+            )
+
+            if cache_valid:
+                featured_books = cache_entry["data"]
+                print(f"✅ Using in-memory featured cache for {user_email}.")
             else:
-                # Reuse already calculated top genres
-                top_genres = [g["name"] for g in genres[:3] if g["name"]]
-
-                # Fallback if user has no favorites at all
-                if not top_genres:
-                    top_genres = ["Fiction", "Romance", "Mystery"]
-
-                async def fetch_books_for_genre(client, genre):
-                    """Fetch books for a specific genre via category search."""
-                    try:
-                        feature_query = f"subject:{genre}"
-                        url_feat = (
-                            f"https://www.googleapis.com/books/v1/volumes?"
-                            f"q={urllib.parse.quote(feature_query)}&maxResults=4&orderBy=relevance&key={API_KEY}"
-                        )
-                        print(f"📚 Fetching featured for genre: {genre}")
-                        resp = await client.get(url_feat, timeout=10.0)
-                        if resp.status_code == 200:
-                            return resp.json().get("items", [])
-                    except Exception as e:
-                        print(f"❌ Error fetching {genre}: {e}")
-                    return []
-
-                async with httpx.AsyncClient() as client:
-                    # Run all genre requests in parallel
-                    tasks = [fetch_books_for_genre(client, g) for g in top_genres]
-                    results = await asyncio.gather(*tasks)
-
-                # Combine results from all genres
-                for r in results:
-                    if r:
-                        featured_books.extend(r)
-
-                # ✅ Cache in session for this login
-                request.session["featured_books"] = featured_books
-                print(
-                    f"🧠 Cached featured books ({len(featured_books)} total) for this session."
+                # 🔍 Check Supabase persistent cache
+                db_cache = (
+                    supabase.table("featured_cache")
+                    .select("*")
+                    .eq("user_email", user_email)
+                    .execute()
+                    .data
                 )
 
+                db_valid = False
+                if db_cache:
+                    db_entry = db_cache[0]
+                    # Check if genres match and data is recent (6 hrs)
+
+                    updated_at = datetime.fromisoformat(
+                        db_entry["updated_at"].replace("Z", "+00:00")
+                    )
+                    age_seconds = (
+                        datetime.now(timezone.utc) - updated_at
+                    ).total_seconds()
+                    if db_entry["genres"] == top_genres and age_seconds < 6 * 60 * 60:
+                        featured_books = db_entry["data"]
+                        db_valid = True
+                        print(f"✅ Using Supabase cached featured for {user_email}.")
+
+                if not db_valid:
+                    print(
+                        f"📚 Rebuilding featured for {user_email} (new genres: {top_genres})"
+                    )
+
+                    async def fetch_books_for_genre(client, genre):
+                        try:
+                            feature_query = f"subject:{genre}"
+                            url_feat = (
+                                f"https://www.googleapis.com/books/v1/volumes?"
+                                f"q={urllib.parse.quote(feature_query)}&maxResults=4&orderBy=relevance&key={API_KEY}"
+                            )
+                            resp = await client.get(url_feat, timeout=10.0)
+                            if resp.status_code == 200:
+                                return resp.json().get("items", [])
+                        except Exception as e:
+                            print(f"❌ Error fetching {genre}: {e}")
+                        return []
+
+                    async with httpx.AsyncClient() as client:
+                        tasks = [fetch_books_for_genre(client, g) for g in top_genres]
+                        results = await asyncio.gather(*tasks)
+                    featured_books = [b for r in results for b in r if r]
+
+                    # ✅ Save both in memory and Supabase
+                    featured_cache[user_email] = {
+                        "data": featured_books,
+                        "genres": top_genres,
+                        "timestamp": time(),
+                    }
+
+                    # Upsert (insert or update)
+                    supabase.table("featured_cache").upsert(
+                        {
+                            "user_email": user_email,
+                            "genres": top_genres,
+                            "data": featured_books,
+                            "updated_at": datetime.utcnow().isoformat() + "Z",
+                        }
+                    ).execute()
+
+                    print(
+                        f"🧠 Cached featured books ({len(featured_books)}) for {user_email} in Supabase."
+                    )
         except Exception as e:
             print("❌ Error fetching personalized featured books:", e)
 
@@ -243,9 +293,10 @@ async def homepage(request: Request):
 # --- Clear Recently Viewed ---
 @router.get("/clear-recently-viewed")
 async def clear_recently_viewed(request: Request):
-    user_email = get_current_user_email(request)
-    if not user_email:
+    user = request.session.get("user")
+    if not user:
         return RedirectResponse(url="/login")
+    user_email = user["email"]
     supabase.table("recently_viewed").delete().eq("user_email", user_email).execute()
     return RedirectResponse(url="/", status_code=303)
 
@@ -253,9 +304,10 @@ async def clear_recently_viewed(request: Request):
 # --- Clear Search History ---
 @router.get("/clear-search-history")
 async def clear_search_history(request: Request):
-    user_email = get_current_user_email(request)
-    if not user_email:
+    user = request.session.get("user")
+    if not user:
         return RedirectResponse(url="/login")
+    user_email = user["email"]
     supabase.table("search_history").delete().eq("user_email", user_email).execute()
     return RedirectResponse(url="/", status_code=303)
 

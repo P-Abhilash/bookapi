@@ -61,9 +61,10 @@ async def fetch_other_links(isbn: str):
 async def search_books(
     request: Request, q: Optional[str] = None, filter: Optional[str] = ""
 ):
-    user = get_current_user_email(request)
+    user = request.session.get("user")
     if not user:
         return RedirectResponse(url="/login")
+    user_email = user["email"]
 
     books = []
     query = f"{filter}:{q}" if filter else q
@@ -74,7 +75,7 @@ async def search_books(
         existing = (
             supabase.table("search_history")
             .select("id")
-            .eq("user_email", user)
+            .eq("user_email", user_email)
             .eq("query", query)
             .execute()
             .data
@@ -88,14 +89,14 @@ async def search_books(
         else:
             # ✅ Insert new if not found
             supabase.table("search_history").insert(
-                {"user_email": user, "query": query}
+                {"user_email": user_email, "query": query}
             ).execute()
 
     # --- Fetch last 10 searches for display ---
     history_res = (
         supabase.table("search_history")
         .select("query")
-        .eq("user_email", user)
+        .eq("user_email", user_email)
         .order("created_at", desc=True)
         .limit(10)
         .execute()
@@ -146,9 +147,10 @@ async def search_books(
 
 @router.get("/book/{book_id}", response_class=HTMLResponse)
 async def book_detail(book_id: str, request: Request):
-    user_email = get_current_user_email(request)
-    if not user_email:
+    user = request.session.get("user")
+    if not user:
         return RedirectResponse(url="/login")
+    user_email = user["email"]
 
     # --- Check cache ---
     cache_result = (
@@ -296,7 +298,7 @@ async def book_detail(book_id: str, request: Request):
         {
             "request": request,
             "book": book_data,
-            "user": user_email,
+            "user": user,
             "is_favorite": is_favorite,
             "shelves": shelves,
             "shelf_books": shelf_books,

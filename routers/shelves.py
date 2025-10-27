@@ -31,26 +31,44 @@ async def remove_from_shelf(
 
 @router.get("/shelves", response_class=HTMLResponse)
 async def shelves_page(request: Request):
-    user_email = get_current_user_email(request)
-    if not user_email:
+    user = request.session.get("user")
+    if not user:
         return RedirectResponse(url="/login", status_code=302)
-
+    user_email = user["email"]
     shelves = (
         supabase.table("shelves").select("*").eq("user_email", user_email).execute()
     )
     return templates.TemplateResponse(
         "shelves.html",
-        {"request": request, "user": user_email, "shelves": shelves.data or []},
+        {"request": request, "user": user, "shelves": shelves.data or []},
     )
 
 
 @router.post("/create-shelf")
 async def create_shelf(request: Request, name: str = Form(...)):
-    user_email = get_current_user_email(request)
-    if not user_email:
+    user = request.session.get("user")
+    if not user:
         return RedirectResponse(url="/login")
+    user_email = user["email"]
     cloud_logger.info(f"🪣 {user_email} created new shelf: {name}")
-    # Prevent duplicate shelf
+
+    # ✅ Length validation
+    if len(name.strip()) > 20:
+        # Fetch shelves again so template has data
+        shelves = (
+            supabase.table("shelves").select("*").eq("user_email", user_email).execute()
+        )
+        return templates.TemplateResponse(
+            "shelves.html",
+            {
+                "request": request,
+                "user": user,
+                "shelves": shelves.data or [],
+                "error": "Shelf name cannot exceed 20 characters.",
+            },
+        )
+
+    # ✅ Check for duplicates
     existing = (
         supabase.table("shelves")
         .select("*")
@@ -64,12 +82,11 @@ async def create_shelf(request: Request, name: str = Form(...)):
             {"user_email": user_email, "name": name}
         ).execute()
 
-        # ✅ Try to redirect back to the previous page (referer)
+    # ✅ Redirect user appropriately
     referer = request.headers.get("referer")
     if referer and "/book/" in referer:
         return RedirectResponse(url=referer, status_code=303)
 
-    # Fallback: redirect to shelves if no referer
     return RedirectResponse(url="/shelves", status_code=303)
 
 
@@ -92,10 +109,10 @@ async def delete_shelf(request: Request, shelf_id: int = Form(...)):
 
 @router.get("/shelf/{shelf_id}", response_class=HTMLResponse)
 async def view_shelf(shelf_id: int, request: Request):
-    user_email = get_current_user_email(request)
-    if not user_email:
+    user = request.session.get("user")
+    if not user:
         return RedirectResponse(url="/login")
-
+    user_email = user["email"]
     shelf = (
         supabase.table("shelves")
         .select("*")
@@ -112,7 +129,7 @@ async def view_shelf(shelf_id: int, request: Request):
         "shelf_detail.html",
         {
             "request": request,
-            "user": user_email,
+            "user": user,
             "shelf": shelf.data[0],
             "books": books.data or [],
         },

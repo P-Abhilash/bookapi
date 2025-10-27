@@ -34,7 +34,7 @@
 
       <!-- 📖 Description -->
       <div class="book-description-mobile d-lg-none mt-3">
-        <h5>Description</h5>
+        <h5><strong>Description</strong></h5>
         <p>{{ book.volumeInfo.description | safe }}</p>
       </div>
 
@@ -138,7 +138,9 @@
           <div class="mb-3">
             <label for="shelfName" class="form-label">Shelf Name</label>
             <input type="text" name="name" id="shelfName" class="form-control"
-              placeholder="e.g. Favorites, Sci-Fi, To Read" required>
+              placeholder="e.g. Favorites, Sci-Fi, To Read" required maxlength="20"
+              oninput="updateShelfCharCount(this)">
+            <small id="shelfCharCounter" class="text-muted">0 / 20 characters</small>
           </div>
         </div>
         <div class="modal-footer">
@@ -247,6 +249,12 @@
       });
     });
   });
+</script>
+<script>
+  function updateShelfCharCount(input) {
+    const counter = document.getElementById("shelfCharCounter");
+    if (counter) counter.textContent = `${input.value.length} / 20 characters`;
+  }
 </script>
 
 {% endblock %}

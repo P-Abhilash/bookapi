@@ -1,10 +1,28 @@
 /* === Global === */
 body {
   font-family: Arial, sans-serif;
-  background-color: #f4f4f9;
+  background-color: #f9fafc;
   background-repeat: no-repeat;
   background-size: auto;
 }
+
+/* Background image ONLY for login & signup pages */
+.auth-background::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url("/static/assets/DeWatermark.ai_1761350896911_1.jpeg") center top / 90% no-repeat;
+  opacity: 0.25;
+  z-index: -1;
+  pointer-events: none;
+  background-size: 100%;
+}
+
+/* remove from normal pages */
+body::before {
+  content: none;
+}
+
 
 /* Navbar */
 .navbar-nav .nav-link {
@@ -27,13 +45,13 @@ body {
 /* Buttons */
 .btn-outline-primary,
 .btn-outline-secondary {
-  color: antiquewhite;
-  border-color: antiquewhite;
+  color: #bdbdbd;
+  border-color: #bdbdbd;
 }
 
 .btn-outline-primary:hover,
 .btn-outline-secondary:hover {
-  background-color: antiquewhite;
+  background-color: #bdbdbd;
   color: #2b1c09;
 }
 
@@ -48,10 +66,11 @@ button {
 }
 
 .carousel {
-  border: 2px solid #a88658;
+  border: 2px solid #d5dae3; /* softer neutral border */
   border-radius: 12px;
   padding: 10px;
-  background-color: #fff8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* add gentle lift */
+  background-color: #eef1f6;
 }
 
 .carousel-control-next-icon,
@@ -70,20 +89,27 @@ main {
 /* Index Page */
 .dashboard-header {
   font-weight: 700;
-  color: #0e0c09;
+  color: #2e2e2e;
 }
 
 /* General Card Style */
 .card-modern {
-  background: #d2b48c;
+  background: #ffffff;
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-  transition: all 0.2s ease-in-out;
+  border: 1px solid rgba(0, 0, 0, 0.08); /* subtle neutral border */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* faint depth */
+  margin-bottom: 20px;
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
 .card-modern:hover {
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
   transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Add space between cards in grid */
+.row .col {
+  margin-bottom: 15px;
 }
 
 .card-body {
@@ -142,7 +168,7 @@ main {
 
 /* 🔍 Search History */
 .card-history {
-  border-left: 6px solid #8b5e3c;
+  border-left: 6px solid #4361ee;
 }
 .card-history .card-title {
   color: #3c2008;
@@ -159,30 +185,34 @@ main {
 /* === Unified List Styling with Separators === */
 
 .list-group {
-  background: #d2b48c;
+  background: #ffffff;
   border-radius: 10px;
   padding: 6px;
   box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.08);
 }
 
 .list-group-item {
-  background-color: #d2b48c;
-  border: none;
+  background-color: #eef1f6;
   border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   padding: 10px 12px;
   border-radius: 4px;
-  margin-bottom: 0;
   transition: all 0.2s ease-in-out;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  margin-bottom: 8px;
+  border-radius: 6px;
+  background-clip: padding-box;
 }
 
 /* Remove last border */
 .list-group-item:last-child {
   border-bottom: none;
+  margin-bottom: 0;
 }
 
 /* Hover feedback */
 .list-group-item:hover {
-  background-color: #e0be92;
+  background-color: #cee5f6;
   transform: translateY(-2px);
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
 }
@@ -203,18 +233,18 @@ main {
 
 .text-link {
   font-weight: 500;
-  color: #333;
+  color: #2e2e2e;
   text-decoration: none;
 }
 
 a {
-  color: #4c2c02;
+  color: #4361ee;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 a:hover {
-  color: #a10c2a;
+  color: #3a56d1;
   text-decoration: none;
 }
 
@@ -226,6 +256,9 @@ a:hover {
 }
 
 /* Genre Cards */
+.genre{
+  background-color: #eef1f6;
+}
 .genre-card {
   background: #f6ead1;
   transition: all 0.2s ease;
@@ -476,6 +509,7 @@ button:disabled {
 
 /* === Featured Books Polish === */
 .featured-books .card {
+  background-color: #eef1f6;
   border: 1px solid #f1e0c6;
   border-radius: 12px;
   box-shadow: 0 3px 10px rgba(180, 130, 80, 0.08);
@@ -483,6 +517,7 @@ button:disabled {
 }
 
 .featured-books .card:hover {
+  background-color: #cee5f6;
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(155, 112, 70, 0.25);
 }
@@ -493,6 +528,129 @@ button:disabled {
 }
 
 .featured-books .card-title a:hover {
-  color: #8b5e3c;
+  color: #4361ee;
   text-decoration: underline;
+}
+
+/* === Fix Favorite Card Background Visibility === */
+
+/* Force background to apply instead of Bootstrap's .card default */
+.favorite-card {
+  background-color: #eef1f6 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Subtle hover effect already matches your color theme */
+.favorite-card:hover {
+  background-color: #cee5f6 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+/* === Fix vertical alignment for favorite card images (final version) === */
+.favorite-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.favorite-card .row.g-0 {
+  height: 100%;
+  display: flex;
+  align-items: center; /* aligns image + text vertically */
+}
+
+/* Ensure image column is centered */
+.favorite-card .col-md-4,
+.favorite-card .col-md-4.text-center {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* Keep image sizing consistent */
+.favorite-card img {
+  max-height: 160px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* === Shelf Detail Page - Align Book Cover Images Vertically === */
+.shelf-card {
+  background-color: #eef1f6 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Hover same as favorites */
+.shelf-card:hover {
+  background-color: #cee5f6 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Fix image vertical alignment for all cards */
+.shelf-card .row.g-0 {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Ensure image column centers properly */
+.shelf-card .col-md-4,
+.shelf-card .col-md-4.text-center {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* Keep image proportions clean */
+.shelf-card img {
+  max-height: 160px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+/* === Shelves Page Improvements === */
+.shelf-item {
+  display: flex;
+  flex-wrap: wrap; /* allows wrapping when text is long */
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px; /* spacing between name & button */
+}
+
+/* Limit how wide shelf names can be before wrapping */
+.shelf-item a {
+  max-width: 75%; /* restrict long names */
+  word-break: break-word; /* break long words nicely */
+  overflow-wrap: break-word;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Keep delete button aligned on short names */
+.shelf-item form {
+  flex-shrink: 0;
+}
+
+/* Ensure delete button moves below for long names */
+@media (max-width: 600px) {
+  .shelf-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .shelf-item a {
+    max-width: 100%;
+  }
 }

@@ -22,10 +22,10 @@ API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 @router.get("/favorites", response_class=HTMLResponse)
 async def view_favorites(request: Request):
     """View all favorites for the logged-in user"""
-    user_email = get_current_user_email(request)
-    if not user_email:
+    user = request.session.get("user")
+    if not user:
         return RedirectResponse(url="/login", status_code=302)
-
+    user_email = user["email"]
     result = (
         supabase.table("favorites").select("*").eq("user_email", user_email).execute()
     )
@@ -33,18 +33,19 @@ async def view_favorites(request: Request):
 
     return templates.TemplateResponse(
         "favorites.html",
-        {"request": request, "user": user_email, "favorites": favorites},
+        {"request": request, "user": user, "favorites": favorites},
     )
 
 
 @router.post("/remove-favorite")
 async def remove_favorite(request: Request, book_id: str = Form(...)):
     """Remove a book from favorites"""
-    user_email = get_current_user_email(request)
-    if not user_email:
+    user = request.session.get("user")
+    if not user:
         return RedirectResponse(url="/login", status_code=302)
+    user_email = user["email"]
     cloud_logger.info(f"💔 {user_email} removed book {book_id} from favorites")
-    supabase.table("favorites").delete().eq("user_email", user_email).eq(
+    supabase.table("favorites").delete().eq("user_email", user).eq(
         "book_id", book_id
     ).execute()
 

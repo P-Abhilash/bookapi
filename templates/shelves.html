@@ -4,10 +4,16 @@
 {% block content %}
 <div class="container py-4">
   <h2>📚 My Shelves</h2>
+  {% if error %}
+  <div class="alert alert-danger mt-3">{{ error }}</div>
+  {% endif %}
 
   <form class="row g-3 mt-3" method="post" action="/create-shelf">
     <div class="col-auto">
-      <input type="text" class="form-control" name="name" placeholder="New shelf name" required>
+      <input type="text" class="form-control" name="name" placeholder="New shelf name" required maxlength="20"
+        oninput="updateCharCount(this)">
+      <small id="shelfNameCounter" class="text-muted">0 / 20 characters</small>
+
     </div>
     <div class="col-auto">
       <button type="submit" class="btn btn-primary">➕ Create Shelf</button>
@@ -17,7 +23,7 @@
   {% if shelves %}
   <ul class="list-group mt-4">
     {% for shelf in shelves %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
+    <li class="list-group-item shelf-item">
       <a href="/shelf/{{ shelf.id }}">{{ shelf.name }}</a>
       <form method="post" action="/delete-shelf" class="delete-shelf-form d-inline" data-shelf="{{ shelf.name }}">
         <input type="hidden" name="shelf_id" value="{{ shelf.id }}">
@@ -72,5 +78,11 @@
       };
     });
   });
+</script>
+<script>
+  function updateCharCount(input) {
+    const counter = document.getElementById("shelfNameCounter");
+    counter.textContent = `${input.value.length} / 20 characters`;
+  }
 </script>
 {% endblock %}
