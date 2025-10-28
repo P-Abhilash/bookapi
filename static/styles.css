@@ -11,11 +11,11 @@ body {
   content: "";
   position: fixed;
   inset: 0;
-  background: url("/static/assets/DeWatermark.ai_1761350896911_1.jpeg") center top / 90% no-repeat;
+  background: url("/static/assets/DeWatermark.ai_1761350896911_1.jpeg") center top no-repeat;
   opacity: 0.25;
   z-index: -1;
   pointer-events: none;
-  background-size: 100%;
+  background-size: cover;
 }
 
 /* remove from normal pages */

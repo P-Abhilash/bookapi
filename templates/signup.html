@@ -1,26 +1,97 @@
-{% extends "boilerplate.html" %} {% block title %}Sign Up{% endblock %} {% block body_class %}auth-background{% endblock
-%}
-{% block
-content %}
-<div class="card mx-auto p-4 shadow" style="max-width: 400px; background: bisque">
-  <h4 class="text-center">Sign Up</h4>
-  {% if error %}
-  <div class="alert alert-danger">{{ error }}</div>
-  {% elif success %}
-  <div class="alert alert-success">{{ success }}</div>
-  {% endif %}
-  <form method="post" action="/signup">
-    <input type="text" name="username" class="form-control mb-2" placeholder="Username" required maxlength="20"
-      minlength="3" />
-    <small class="text-muted">Username must be 3–20 characters.</small>
-    <input type="email" name="email" class="form-control mb-2" placeholder="Email" required />
-    <input type="password" name="password" class="form-control mb-3" placeholder="Password" required />
-    <button type="submit" class="btn btn-success w-100" style="background: #4c2c02">
-      Sign Up
-    </button>
-  </form>
-  <p class="mt-3 text-center">
-    Already have an account? <a href="/login">Login</a>
-  </p>
+{% extends "boilerplate.html" %}
+{% block title %}Sign Up{% endblock %}
+{% block body_class %}auth-background{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/signup.css">
+<div class="container d-flex justify-content-center align-items-center">
+  <div class="auth-wrap w-100" style="max-width: 480px;">
+    <div class="auth-card">
+      <div class="auth-form px-4 py-3 px-md-5 py-md-4">
+        <div class="auth-title">
+          <h3 class="fw-bold mb-1">Create Account</h3>
+          <p class="auth-subtitle mb-0">Join us and start exploring</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger text-center">{{ error }}</div>
+        {% elif success %}
+        <div class="alert alert-success text-center">{{ success }}</div>
+        {% endif %}
+
+        <form method="post" action="/signup" novalidate>
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input id="username" name="username" type="text" class="mt-0 form-control" placeholder="Your username"
+              required minlength="3" maxlength="20" />
+            <small id="usernameHint" class="text-muted" style="display:none;">Must be 3–20 characters long.</small>
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label">Email Address</label>
+            <input id="email" name="email" type="email" class="mt-0 form-control" placeholder="you@example.com"
+              required />
+          </div>
+
+          <div class="mb-3 position-relative">
+            <label for="password" class="form-label">Password</label>
+            <div class="input-group">
+              <input id="password" name="password" type="password" class="mt-0 form-control" required />
+              <button type="button" class="mt-0 btn btn-outline-secondary" id="togglePassword" tabindex="-1">
+                👁
+              </button>
+            </div>
+          </div>
+
+          <button class="btn btn-primary w-100 py-2" type="submit">Sign Up</button>
+        </form>
+
+        <!-- Divider -->
+        <div class="d-flex align-items-center mt-3">
+          <hr class="flex-grow-1" />
+          <span class="px-2 text-muted">OR</span>
+          <hr class="flex-grow-1" />
+        </div>
+
+        <!-- Google Sign-Up -->
+        <div class="text-center">
+          <button class="gsi-material-button" onclick="window.location.href='/login/google'">
+            <div class="gsi-material-button-icon">
+              <img src="https://developers.google.com/identity/images/g-logo.png" width="18" alt="Google logo" />
+            </div>
+            <span class="gsi-material-button-contents">Sign up with Google</span>
+          </button>
+        </div>
+
+        <div class="auth-bottom mt-3">
+          Already have an account? <a href="/login">Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+  const toggleBtn = document.getElementById("togglePassword");
+  const pwdField = document.getElementById("password");
+  toggleBtn.addEventListener("click", () => {
+    const type = pwdField.type === "password" ? "text" : "password";
+    pwdField.type = type;
+    toggleBtn.textContent = type === "password" ? "👁" : "🙈";
+  });
+
+  // 👇 Username hint behavior
+  const usernameInput = document.getElementById("username");
+  const usernameHint = document.getElementById("usernameHint");
+
+  usernameInput.addEventListener("input", () => {
+    if (usernameInput.value.length >= 20) {
+      usernameHint.style.display = "inline";
+      usernameHint.classList.add("text-danger");
+      usernameHint.textContent = "⚠️ Maximum 20 characters reached.";
+    } else {
+      usernameHint.style.display = "none";
+    }
+  });
+</script>
+
 {% endblock %}
