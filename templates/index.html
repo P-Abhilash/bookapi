@@ -4,23 +4,45 @@
 {% block content %}
 
 <div class="container py-4">
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-    <h2 class="dashboard-header mb-2 mb-md-0">
-      Welcome, {{ user.username or user.email }}!
-    </h2>
+  <!-- ======= Carousel Header + Sort Dropdown ======= -->
+  <div class="container mt-2 mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-3">
+      <!-- Left side: dynamic heading + subtext -->
+      <div>
+        <h4 id="carousel-heading" class="fw-bold mb-1">
+          {% if filter == "top" %}
+          Top Rated This Year
+          {% elif filter == "featured" %}
+          Editor’s Picks
+          {% else %}
+          Popular This Month
+          {% endif %}
+        </h4>
+        <p class="text-muted small mb-0" id="carousel-subtext">
+          {% if filter == "top" %}
+          Critically acclaimed favorites from recent years.
+          {% elif filter == "featured" %}
+          Curated genres and staff recommendations.
+          {% else %}
+          Handpicked books everyone’s reading right now.
+          {% endif %}
+        </p>
+      </div>
 
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-      <label for="filter" class="fw-semibold text-muted small mb-0">Sort by:</label>
-      <select id="filter" class="form-select form-select-sm w-auto">
-        <option value="new" {% if filter=="new" %}selected{% endif %}>New arrivals</option>
-        <option value="week" {% if filter=="week" %}selected{% endif %}>Popular this week</option>
-        <option value="month" {% if filter=="month" %}selected{% endif %}>Popular this month</option>
-        <option value="top" {% if filter=="top" %}selected{% endif %}>Top rated 2025</option>
-      </select>
-
+      <!-- Right side: sort dropdown -->
+      <div class="ms-md-auto">
+        <label for="filter" class="fw-semibold text-muted small mb-0 me-2">Sort by:</label>
+        <select id="filter" name="filter" class="form-select form-select-sm w-auto d-inline-block"
+          onchange="this.form.submit()">
+          <option value="month" {% if filter=="month" %}selected{% endif %}>Popular this month</option>
+          <option value="top" {% if filter=="top" %}selected{% endif %}>Top rated this year</option>
+          <option value="featured" {% if filter=="featured" %}selected{% endif %}>Editor’s Picks</option>
+        </select>
+      </div>
     </div>
-
   </div>
+  <!-- ======= End Carousel Header ======= -->
+
 
   {% if carousel_books %}
   <div id="bookCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
@@ -347,5 +369,29 @@
     }
   }
 </style>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const filterSelect = document.getElementById('filter');
+    const heading = document.getElementById('carousel-heading');
+    const subtext = document.getElementById('carousel-subtext');
+
+    const titles = {
+      month: 'Popular This Month',
+      top: 'Top Rated This Year',
+      featured: "Editor’s Picks"
+    };
+    const subtitles = {
+      month: "Handpicked books everyone’s reading right now.",
+      top: "Critically acclaimed favorites from recent years.",
+      featured: "Curated genres and staff recommendations."
+    };
+
+    filterSelect.addEventListener('change', () => {
+      const val = filterSelect.value;
+      heading.textContent = titles[val];
+      subtext.textContent = subtitles[val];
+    });
+  });
+</script>
 
 {% endblock %}
