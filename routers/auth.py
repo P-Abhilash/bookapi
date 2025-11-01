@@ -124,20 +124,29 @@ async def signup(
 async def google_login():
     """Start Supabase Google OAuth (PKCE flow)."""
     try:
+        # Use the environment variable for redirect URL
+        redirect_to = os.getenv(
+            "SUPABASE_REDIRECT_URL", "http://127.0.0.1:8000/auth/callback"
+        )
+
+        cloud_logger.info(f"🔐 Starting Google OAuth with redirect: {redirect_to}")
+
         # Use Supabase's built-in OAuth sign-in
         response = supabase.auth.sign_in_with_oauth(
             {
                 "provider": "google",
                 "options": {
-                    "redirect_to": REDIRECT_URL,
+                    "redirect_to": redirect_to,
                     "query_params": {"access_type": "offline", "prompt": "consent"},
                 },
             }
         )
 
         if response and hasattr(response, "url"):
+            cloud_logger.info(f"🔗 Redirecting to: {response.url}")
             return RedirectResponse(url=response.url)
         else:
+            cloud_logger.error("No URL in OAuth response")
             raise HTTPException(status_code=500, detail="OAuth initialization failed")
 
     except Exception as e:
@@ -270,3 +279,65 @@ async def logout(request: Request):
 
     cloud_logger.info(f"👋 {user_email} logged out")
     return resp
+
+
+# --- Forgot Password Page ---
+@router.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request):
+    return templates.TemplateResponse("forgot_password.html", {"request": request})
+
+
+# --- Handle Forgot Password Submission ---
+@router.post("/forgot-password")
+async def forgot_password(request: Request, email: str = Form(...)):
+    try:
+        redirect_url = os.getenv(
+            "SUPABASE_RESET_REDIRECT", "http://127.0.0.1:8000/reset-password"
+        )
+        supabase.auth.reset_password_for_email(email, {"redirect_to": redirect_url})
+        cloud_logger.info(f"📩 Password reset email sent to {email}")
+        return templates.TemplateResponse(
+            "forgot_password.html",
+            {
+                "request": request,
+                "success": "✅ A reset link has been sent to your email. Please check your inbox.",
+            },
+        )
+    except Exception as e:
+        cloud_logger.error(f"Password reset request failed: {e}")
+        return templates.TemplateResponse(
+            "forgot_password.html",
+            {
+                "request": request,
+                "error": "Failed to send reset email. Try again later.",
+            },
+        )
+
+
+# --- Reset Password Page ---
+@router.get("/reset-password", response_class=HTMLResponse)
+async def reset_password_page(request: Request):
+    return templates.TemplateResponse("reset_password.html", {"request": request})
+
+
+# --- Handle Reset Password Submission ---
+@router.post("/reset-password")
+async def reset_password(request: Request, password: str = Form(...)):
+    try:
+        supabase.auth.update_user({"password": password})
+        return templates.TemplateResponse(
+            "reset_password.html",
+            {
+                "request": request,
+                "success": "✅ Password updated successfully. You can now sign in.",
+            },
+        )
+    except Exception as e:
+        cloud_logger.error(f"Reset password failed: {e}")
+        return templates.TemplateResponse(
+            "reset_password.html",
+            {
+                "request": request,
+                "error": "Failed to reset password. Please try again.",
+            },
+        )
