@@ -296,48 +296,41 @@ async def forgot_password(request: Request, email: str = Form(...)):
         )
         supabase.auth.reset_password_for_email(email, {"redirect_to": redirect_url})
         cloud_logger.info(f"📩 Password reset email sent to {email}")
-        return templates.TemplateResponse(
-            "forgot_password.html",
-            {
-                "request": request,
-                "success": "✅ A reset link has been sent to your email. Please check your inbox.",
-            },
-        )
+
+        # ✅ Redirect to login with success message
+        return RedirectResponse(url="/login?sent=success", status_code=302)
+
     except Exception as e:
         cloud_logger.error(f"Password reset request failed: {e}")
-        return templates.TemplateResponse(
-            "forgot_password.html",
-            {
-                "request": request,
-                "error": "Failed to send reset email. Try again later.",
-            },
-        )
+        return RedirectResponse(url="/login?sent=failed", status_code=302)
 
 
-# --- Reset Password Page ---
+# --- Reset Password Page (GET) ---
 @router.get("/reset-password", response_class=HTMLResponse)
 async def reset_password_page(request: Request):
     return templates.TemplateResponse("reset_password.html", {"request": request})
 
 
-# --- Handle Reset Password Submission ---
+# --- Handle Reset Password Submission (POST) ---
 @router.post("/reset-password")
-async def reset_password(request: Request, password: str = Form(...)):
+async def reset_password(
+    password: str = Form(...),
+    access_token: str = Form(None),
+    refresh_token: str = Form(None),
+):
     try:
+        if not access_token or not refresh_token:
+            return RedirectResponse(url="/login?reset=invalid", status_code=302)
+
+        # Authenticate temporarily
+        supabase.auth.set_session(access_token, refresh_token)
+
+        # Update password
         supabase.auth.update_user({"password": password})
-        return templates.TemplateResponse(
-            "reset_password.html",
-            {
-                "request": request,
-                "success": "✅ Password updated successfully. You can now sign in.",
-            },
-        )
+
+        # ✅ Redirect to login with reset success message
+        return RedirectResponse(url="/login?reset=success", status_code=302)
+
     except Exception as e:
-        cloud_logger.error(f"Reset password failed: {e}")
-        return templates.TemplateResponse(
-            "reset_password.html",
-            {
-                "request": request,
-                "error": "Failed to reset password. Please try again.",
-            },
-        )
+        print("Reset error:", e)
+        return RedirectResponse(url="/login?reset=failed", status_code=302)

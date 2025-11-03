@@ -15,6 +15,27 @@
         {% if error %}
         <div class="alert alert-danger text-center">{{ error }}</div>
         {% endif %}
+        {% if request.query_params.get("sent") == "success" %}
+        <div class="alert alert-success text-center">
+          ✅ Password reset email sent. Please check your inbox.
+        </div>
+        {% elif request.query_params.get("sent") == "failed" %}
+        <div class="alert alert-danger text-center">
+          ❌ Could not send reset email. Please try again later.
+        </div>
+        {% elif request.query_params.get("reset") == "success" %}
+        <div class="alert alert-success text-center">
+          ✅ Password updated successfully. Please sign in.
+        </div>
+        {% elif request.query_params.get("reset") == "failed" %}
+        <div class="alert alert-danger text-center">
+          ❌ Failed to update password. Please try again.
+        </div>
+        {% elif request.query_params.get("reset") == "invalid" %}
+        <div class="alert alert-danger text-center">
+          ⚠️ Invalid or expired link. Please request a new password reset.
+        </div>
+        {% endif %}
 
         <form method="post" action="/login" novalidate>
           <div class="mb-3">
